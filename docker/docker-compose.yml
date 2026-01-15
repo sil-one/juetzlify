@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  juetzli-fm:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: juetzli-fm
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount MP3 files from host
+      - ./tracks:/app/backend/tracks
+      # Persist album art cache
+      - ./cache:/app/backend/cache
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    restart: unless-stopped
+
+# For local development, create these directories:
+# mkdir -p tracks/public tracks/private cache

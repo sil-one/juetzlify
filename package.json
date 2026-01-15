@@ -1,0 +1,20 @@
+{
+  "name": "juetzli-fm",
+  "version": "1.0.0",
+  "description": "Jützli FM - Mobile-first music streaming SPA",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build": "npm run build:frontend",
+    "install:all": "npm install && npm install --workspace=frontend && npm install --workspace=backend"
+  },
+  "keywords": ["music", "streaming", "spa", "player"],
+  "author": "",
+  "license": "MIT"
+}

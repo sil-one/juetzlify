@@ -1,0 +1,12 @@
+node_modules/
+npm-debug.log
+.git/
+.gitignore
+.idea/
+.vscode/
+*.md
+.env
+.env.local
+backend/tracks/*.mp3
+backend/tracks/**/*.mp3
+backend/cache/

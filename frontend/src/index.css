@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white font-sans;
+    margin: 0;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* DHL-style logo text */
+  .dhl-style-logo {
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    transform: skewX(-8deg);
+    display: inline-block;
+  }
+
+  /* Player button styling */
+  .player-button {
+    @apply bg-gradient-to-r from-juetzli-red to-red-600 text-white py-4 px-8 rounded-full text-lg font-bold;
+    @apply hover:from-red-600 hover:to-juetzli-red active:scale-95 transition-all shadow-lg;
+    min-width: 120px;
+    min-height: 56px; /* Touch-friendly */
+  }
+
+  /* Progress bar styling */
+  input[type="range"] {
+    @apply w-full h-3 bg-gradient-to-r from-gray-700 to-gray-600 rounded-full appearance-none cursor-pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    @apply appearance-none w-7 h-7 bg-gradient-to-br from-juetzli-yellow to-yellow-500 rounded-full cursor-pointer shadow-lg border-2 border-white;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    @apply w-7 h-7 bg-gradient-to-br from-juetzli-yellow to-yellow-500 rounded-full cursor-pointer shadow-lg border-2 border-white;
+  }
+}

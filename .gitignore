@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build outputs
+frontend/dist/
+backend/cache/
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# MP3 files (managed separately on VPS)
+backend/tracks/*.mp3
+backend/tracks/**/*.mp3
+
+# Cache
+backend/cache/album-art/*.jpg
+backend/cache/album-art/*.jpeg
+backend/cache/album-art/*.png

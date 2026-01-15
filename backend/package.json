@@ -1,0 +1,21 @@
+{
+  "name": "juetzli-fm-backend",
+  "version": "1.0.0",
+  "description": "Backend for Jützli FM music streaming",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "keywords": ["music", "streaming", "api"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "music-metadata": "^8.1.4",
+    "sharp": "^0.33.1",
+    "dotenv": "^16.3.1"
+  }
+}
