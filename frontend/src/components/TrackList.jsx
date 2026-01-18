@@ -1,6 +1,6 @@
 import React from 'react';
 
-const TrackList = ({ tracks, currentTrack, onTrackSelect }) => {
+const TrackList = ({ tracks, currentTrack, onTrackSelect, onAddToQueue }) => {
   if (!tracks || tracks.length === 0) {
     return (
       <div className="text-center py-8 text-gray-400">
@@ -54,6 +54,20 @@ const TrackList = ({ tracks, currentTrack, onTrackSelect }) => {
                 <span className="text-sm text-juetzli-yellow font-semibold">
                   {Math.floor(track.duration / 60)}:{String(Math.floor(track.duration % 60)).padStart(2, '0')}
                 </span>
+              )}
+              {onAddToQueue && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddToQueue(track);
+                  }}
+                  className="p-2 rounded-full bg-gray-600 hover:bg-juetzli-yellow hover:text-black transition-colors"
+                  title="Add to queue"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
               )}
             </div>
           </button>

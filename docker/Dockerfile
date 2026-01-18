@@ -1,19 +1,21 @@
 # Stage 1: Build frontend
 FROM node:20-alpine AS frontend-builder
 
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci
-COPY frontend/ ./
-RUN npm run build
+WORKDIR /app
+COPY package*.json ./
+COPY frontend/package*.json ./frontend/
+RUN npm ci --workspace=frontend
+COPY frontend/ ./frontend/
+RUN npm run build --workspace=frontend
 
 # Stage 2: Setup backend
 FROM node:20-alpine AS backend-builder
 
-WORKDIR /app/backend
-COPY backend/package*.json ./
-RUN npm ci --only=production
-COPY backend/ ./
+WORKDIR /app
+COPY package*.json ./
+COPY backend/package*.json ./backend/
+RUN npm ci --workspace=backend --omit=dev
+COPY backend/ ./backend/
 
 # Stage 3: Production
 FROM node:20-alpine

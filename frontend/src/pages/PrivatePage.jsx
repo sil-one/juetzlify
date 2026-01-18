@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import AudioPlayer from '../components/AudioPlayer';
 import TrackList from '../components/TrackList';
+import Queue from '../components/Queue';
 import PasswordPrompt from '../components/PasswordPrompt';
 import { API_BASE_URL } from '../utils/constants';
 
@@ -19,11 +20,15 @@ const PrivatePage = () => {
     isPlaying,
     currentTime,
     duration,
+    queue,
     playTrack,
     togglePlay,
     seek,
     playNext,
     playPrevious,
+    addToQueue,
+    removeFromQueue,
+    clearQueue,
     handleTimeUpdate,
     handleLoadedMetadata,
     handleEnded,
@@ -117,10 +122,17 @@ const PrivatePage = () => {
         onPlayNext={playNext}
         onPlayPrevious={playPrevious}
       />
+      <Queue
+        queue={queue}
+        onRemove={removeFromQueue}
+        onClear={clearQueue}
+        onPlayTrack={playTrack}
+      />
       <TrackList
         tracks={tracks}
         currentTrack={currentTrack}
         onTrackSelect={playTrack}
+        onAddToQueue={addToQueue}
       />
     </div>
   );

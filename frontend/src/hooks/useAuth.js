@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 // TODO: Replace with actual password hash
 // Generate with: echo -n "your-password" | shasum -a 256
-const PASSWORD_HASH = 'YOUR_PASSWORD_HASH_HERE';
+const PASSWORD_HASH = '6ac4acbf83605bd5786249a6c3f72c7cf2b3d7706e62a43c85955fe32603eb15';
 
 export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);

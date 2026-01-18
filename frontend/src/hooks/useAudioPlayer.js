@@ -8,6 +8,7 @@ export const useAudioPlayer = (tracks = []) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
+  const [queue, setQueue] = useState([]);
   const lastBackwardTimeRef = useRef(0);
 
   // Update audio element when track changes
@@ -23,6 +24,64 @@ export const useAudioPlayer = (tracks = []) => {
       setIsPlaying(true);
     }
   }, [currentTrack]);
+
+  // Media Session API for lock screen display
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !currentTrack) return;
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: currentTrack.title || 'Unknown Track',
+      artist: currentTrack.artist || 'Unknown Artist',
+      album: currentTrack.album || 'Unknown Album',
+      artwork: currentTrack.albumArt ? [
+        { src: currentTrack.albumArt, sizes: '512x512', type: 'image/jpeg' }
+      ] : []
+    });
+  }, [currentTrack]);
+
+  // Media Session action handlers
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+
+    const actionHandlers = {
+      play: () => {
+        if (audioRef.current) {
+          audioRef.current.play();
+          setIsPlaying(true);
+        }
+      },
+      pause: () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          setIsPlaying(false);
+        }
+      },
+      previoustrack: () => playPrevious(),
+      nexttrack: () => playNext(),
+      seekto: (details) => {
+        if (audioRef.current && details.seekTime !== undefined) {
+          audioRef.current.currentTime = details.seekTime;
+          setCurrentTime(details.seekTime);
+        }
+      },
+    };
+
+    for (const [action, handler] of Object.entries(actionHandlers)) {
+      try {
+        navigator.mediaSession.setActionHandler(action, handler);
+      } catch (error) {
+        console.log(`Media Session action "${action}" not supported`);
+      }
+    }
+
+    return () => {
+      for (const action of Object.keys(actionHandlers)) {
+        try {
+          navigator.mediaSession.setActionHandler(action, null);
+        } catch (error) {}
+      }
+    };
+  }, [currentTrack, tracks]);
 
   // Update volume
   useEffect(() => {
@@ -56,12 +115,42 @@ export const useAudioPlayer = (tracks = []) => {
   };
 
   const playNext = () => {
+    // If there's a track in the queue, play it
+    if (queue.length > 0) {
+      const nextTrack = queue[0];
+      setQueue(prev => prev.slice(1));
+      playTrack(nextTrack);
+      return;
+    }
+
+    // Otherwise, play next in track list
     if (!currentTrack || tracks.length === 0) return;
 
     const currentIndex = tracks.findIndex(t => t.id === currentTrack.id);
     if (currentIndex < tracks.length - 1) {
       playTrack(tracks[currentIndex + 1]);
     }
+  };
+
+  const addToQueue = (track) => {
+    setQueue(prev => [...prev, track]);
+  };
+
+  const removeFromQueue = (index) => {
+    setQueue(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const clearQueue = () => {
+    setQueue([]);
+  };
+
+  const reorderQueue = (fromIndex, toIndex) => {
+    setQueue(prev => {
+      const newQueue = [...prev];
+      const [moved] = newQueue.splice(fromIndex, 1);
+      newQueue.splice(toIndex, 0, moved);
+      return newQueue;
+    });
   };
 
   const playPrevious = () => {
@@ -88,6 +177,16 @@ export const useAudioPlayer = (tracks = []) => {
 
   const handleTimeUpdate = (e) => {
     setCurrentTime(e.target.currentTime);
+    // Update Media Session position state
+    if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: e.target.duration || 0,
+          playbackRate: e.target.playbackRate || 1,
+          position: e.target.currentTime || 0
+        });
+      } catch (error) {}
+    }
   };
 
   const handleLoadedMetadata = (e) => {
@@ -108,12 +207,17 @@ export const useAudioPlayer = (tracks = []) => {
     currentTime,
     duration,
     volume,
+    queue,
     playTrack,
     togglePlay,
     seek,
     setVolume,
     playNext,
     playPrevious,
+    addToQueue,
+    removeFromQueue,
+    clearQueue,
+    reorderQueue,
     handleTimeUpdate,
     handleLoadedMetadata,
     handleEnded,
