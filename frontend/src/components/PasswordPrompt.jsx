@@ -16,8 +16,8 @@ const PasswordPrompt = ({ onSubmit, error }) => {
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-2xl shadow-2xl ring-4 ring-juetzli-yellow">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold mb-2 text-juetzli-yellow">🔒 Private Library</h2>
-          <p className="text-gray-300">Enter password to access</p>
+          <h2 className="text-3xl font-bold mb-2 text-juetzli-yellow">🔒 Jützli Interni Liäder</h2>
+          <p className="text-gray-300">Bisch ä Jützli? Wenn nei verreis!</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

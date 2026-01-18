@@ -11,7 +11,7 @@ const TrackList = ({ tracks, currentTrack, onTrackSelect, onAddToQueue }) => {
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 pb-24">
-      <h2 className="text-2xl font-bold mb-4 text-juetzli-yellow">🎵 Tracks</h2>
+      <h2 className="text-2xl font-bold mb-4 text-juetzli-yellow">Liäder</h2>
       <div className="space-y-2">
         {tracks.map((track) => (
           <button
@@ -62,7 +62,7 @@ const TrackList = ({ tracks, currentTrack, onTrackSelect, onAddToQueue }) => {
                     onAddToQueue(track);
                   }}
                   className="p-2 rounded-full bg-gray-600 hover:bg-juetzli-yellow hover:text-black transition-colors"
-                  title="Add to queue"
+                  title="Ab id Warteschlangä"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

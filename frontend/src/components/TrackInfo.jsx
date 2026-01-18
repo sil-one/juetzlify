@@ -9,7 +9,7 @@ const TrackInfo = ({ title, artist, album, trackNo, trackTotal }) => {
           {album && trackNo && <span> • </span>}
           {trackNo && (
             <span>
-              Track {trackNo}{trackTotal && `/${trackTotal}`}
+              Liäd Nummer {trackNo}{trackTotal && `/${trackTotal}`}
             </span>
           )}
         </p>

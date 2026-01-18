@@ -20,7 +20,7 @@ const PrivateButton = () => {
         to="/private"
         className="px-4 py-2 bg-black text-juetzli-yellow hover:bg-gray-900 rounded-lg text-sm font-semibold transition-all hover:scale-105 shadow-lg"
       >
-        🔒 Private
+        🔒 Jützli Intern
       </Link>
     </div>
   );
