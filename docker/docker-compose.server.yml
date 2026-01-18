@@ -1,15 +1,11 @@
 services:
   juetzli-fm:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
+    image: juetzli-fm
     container_name: juetzli-fm
     expose:
       - "3000"
     volumes:
-      # Mount MP3 files from host
       - ./tracks:/app/backend/tracks
-      # Persist album art cache
       - ./cache:/app/backend/cache
     environment:
       - NODE_ENV=production
@@ -34,5 +30,8 @@ volumes:
   caddy_data:
   caddy_config:
 
-# Setup on server:
-# mkdir -p tracks/public tracks/private cache
+# Usage on server:
+# 1. Load the image: gunzip -c juetzli-fm.tar.gz | docker load
+# 2. Create directories: mkdir -p tracks/public tracks/private cache
+# 3. Copy this file and Caddyfile to server
+# 4. Rename to docker-compose.yml or run: docker-compose -f docker-compose.server.yml up -d
