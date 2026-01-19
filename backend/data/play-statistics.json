@@ -1,0 +1,35 @@
+{
+  "plays": [
+    {
+      "filename": "track-5-Dr-J-tzli-Bringts--DHL--mp3",
+      "trackId": "track-5-Dr-J-tzli-Bringts--DHL--mp3",
+      "timestamp": "2026-01-19T22:22:04.747Z",
+      "date": "2026-01-19",
+      "visibility": "public"
+    },
+    {
+      "filename": "track-10-Sotto-la-mia-macchina--Felix--mp3",
+      "trackId": "track-10-Sotto-la-mia-macchina--Felix--mp3",
+      "timestamp": "2026-01-19T22:25:15.892Z",
+      "date": "2026-01-19",
+      "visibility": "public"
+    }
+  ],
+  "carnival2026": {
+    "startDate": "2026-02-11",
+    "endDate": "2026-02-17",
+    "dayNames": {
+      "2026-02-11": "Yytrummlä-Mittwuch",
+      "2026-02-12": "Schmutzigä Donnstig",
+      "2026-02-13": "Fritig",
+      "2026-02-14": "Samschtig",
+      "2026-02-15": "Sunntig",
+      "2026-02-16": "Gidelmäntig",
+      "2026-02-17": "Üstrummlä-Zischtig"
+    }
+  },
+  "wrappedEnabled": {
+    "public": false,
+    "private": false
+  }
+}

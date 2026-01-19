@@ -24,9 +24,8 @@ router.get('/:trackId', async (req, res) => {
       });
     }
 
-    // Determine file path
-    const subdir = track.isPublic ? 'public' : 'private';
-    const filePath = path.join(config.tracksPath, subdir, track.filename);
+    // All tracks are now in the 'all' directory
+    const filePath = path.join(config.tracksPath, 'all', track.filename);
 
     // Check if file exists
     if (!fs.existsSync(filePath)) {
@@ -53,6 +52,9 @@ router.get('/:trackId', async (req, res) => {
         'Accept-Ranges': 'bytes',
         'Content-Length': chunksize,
         'Content-Type': 'audio/mpeg',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Range',
+        'Access-Control-Expose-Headers': 'Content-Range, Content-Length',
       });
 
       file.pipe(res);
@@ -62,6 +64,9 @@ router.get('/:trackId', async (req, res) => {
         'Content-Length': fileSize,
         'Content-Type': 'audio/mpeg',
         'Accept-Ranges': 'bytes',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Range',
+        'Access-Control-Expose-Headers': 'Content-Length',
       });
       fs.createReadStream(filePath).pipe(res);
     }

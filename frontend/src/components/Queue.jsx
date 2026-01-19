@@ -13,7 +13,7 @@ const Queue = ({ queue, onRemove, onClear, onPlayTrack }) => {
           onClick={onClear}
           className="text-sm text-sp-text-muted hover:text-sp-text transition-colors"
         >
-          Clear
+          Üfrüümä
         </button>
       </div>
       <div className="space-y-1">

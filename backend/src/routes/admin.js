@@ -1,0 +1,226 @@
+import express from 'express';
+import {
+  migrateTracks,
+  setTrackVisibility,
+  Visibility,
+} from '../services/visibilityService.js';
+import { getAllTracks, refreshCache } from '../services/trackService.js';
+import { clearVisibilityCache } from '../services/visibilityService.js';
+import {
+  getAllTrackPlayCounts,
+  getOverallStatistics,
+  getCarnivalStatistics,
+  getWrappedStatus,
+  setWrappedEnabled,
+} from '../services/playStatisticsService.js';
+
+const router = express.Router();
+
+/**
+ * POST /api/admin/migrate
+ * Trigger track migration from public/private to all/
+ */
+router.post('/migrate', async (req, res) => {
+  try {
+    const result = await migrateTracks();
+
+    // Clear caches to reload with new structure
+    if (result.success) {
+      clearVisibilityCache();
+      refreshCache();
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error during migration:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Migration failed',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/admin/tracks
+ * Get all tracks with visibility info (including disabled)
+ */
+router.get('/tracks', async (req, res) => {
+  try {
+    const tracks = await getAllTracks('admin');
+
+    res.json({
+      success: true,
+      tracks,
+      count: tracks.length,
+    });
+  } catch (error) {
+    console.error('Error fetching admin tracks:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch tracks',
+    });
+  }
+});
+
+/**
+ * PUT /api/admin/tracks/:filename/visibility
+ * Update track visibility
+ */
+router.put('/tracks/:filename/visibility', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const { visibility } = req.body;
+
+    if (!visibility || !Object.values(Visibility).includes(visibility)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid visibility. Must be one of: ${Object.values(Visibility).join(', ')}`,
+      });
+    }
+
+    const result = await setTrackVisibility(filename, visibility);
+
+    // Clear caches to reload with new visibility
+    clearVisibilityCache();
+    refreshCache();
+
+    res.json({
+      success: true,
+      message: `Track visibility updated to ${visibility}`,
+      ...result,
+    });
+  } catch (error) {
+    console.error('Error updating track visibility:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update track visibility',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/admin/statistics/play-counts
+ * Get play counts for all tracks
+ */
+router.get('/statistics/play-counts', async (req, res) => {
+  try {
+    const playCounts = await getAllTrackPlayCounts();
+
+    res.json({
+      success: true,
+      playCounts,
+    });
+  } catch (error) {
+    console.error('Error fetching play counts:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch play counts',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/statistics/overview
+ * Get overall statistics
+ */
+router.get('/statistics/overview', async (req, res) => {
+  try {
+    const statistics = await getOverallStatistics();
+
+    res.json({
+      success: true,
+      ...statistics,
+    });
+  } catch (error) {
+    console.error('Error fetching overview statistics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch statistics',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/statistics/carnival
+ * Get carnival statistics (all tracks)
+ */
+router.get('/statistics/carnival', async (req, res) => {
+  try {
+    const statistics = await getCarnivalStatistics(true); // Include all tracks
+
+    res.json({
+      success: true,
+      ...statistics,
+    });
+  } catch (error) {
+    console.error('Error fetching carnival statistics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch carnival statistics',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/wrapped/status
+ * Get wrapped page enabled status
+ */
+router.get('/wrapped/status', async (req, res) => {
+  try {
+    const status = await getWrappedStatus();
+
+    res.json({
+      success: true,
+      wrappedEnabled: status,
+    });
+  } catch (error) {
+    console.error('Error fetching wrapped status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch wrapped status',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/wrapped/enable
+ * Enable/disable wrapped pages
+ */
+router.post('/wrapped/enable', async (req, res) => {
+  try {
+    const { type, enabled } = req.body;
+
+    if (!type || (type !== 'public' && type !== 'private')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid type. Must be "public" or "private"',
+      });
+    }
+
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid enabled value. Must be boolean',
+      });
+    }
+
+    const result = await setWrappedEnabled(type, enabled);
+
+    res.json({
+      success: true,
+      message: `Wrapped ${type} page ${enabled ? 'enabled' : 'disabled'}`,
+      ...result,
+    });
+  } catch (error) {
+    console.error('Error setting wrapped status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to set wrapped status',
+      message: error.message,
+    });
+  }
+});
+
+export default router;

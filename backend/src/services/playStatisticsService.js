@@ -1,0 +1,327 @@
+import fs from 'fs/promises';
+import path from 'path';
+import { config } from '../config/config.js';
+
+const STATISTICS_FILE = path.join(config.dataPath, 'play-statistics.json');
+
+let statisticsCache = null;
+
+/**
+ * Carnival 2026 date configuration
+ */
+const CARNIVAL_2026 = {
+  startDate: '2026-02-11',
+  endDate: '2026-02-17',
+  dayNames: {
+    '2026-02-11': 'Yytrummlä-Mittwuch',
+    '2026-02-12': 'Schmutzigä Donnstig',
+    '2026-02-13': 'Fritig',
+    '2026-02-14': 'Samschtig',
+    '2026-02-15': 'Sunntig',
+    '2026-02-16': 'Gidelmäntig',
+    '2026-02-17': 'Üstrummlä-Zischtig',
+  },
+};
+
+/**
+ * Ensure data directory exists
+ */
+async function ensureDataDir() {
+  try {
+    await fs.mkdir(config.dataPath, { recursive: true });
+  } catch (error) {
+    console.error('Error creating data directory:', error.message);
+  }
+}
+
+/**
+ * Load statistics from file
+ */
+async function loadStatistics() {
+  try {
+    const data = await fs.readFile(STATISTICS_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      // File doesn't exist yet, create initial structure
+      const initialData = {
+        plays: [],
+        carnival2026: CARNIVAL_2026,
+        wrappedEnabled: {
+          public: false,
+          private: false,
+        },
+      };
+      await saveStatistics(initialData);
+      return initialData;
+    }
+    console.error('Error loading play statistics:', error.message);
+    return {
+      plays: [],
+      carnival2026: CARNIVAL_2026,
+      wrappedEnabled: { public: false, private: false },
+    };
+  }
+}
+
+/**
+ * Save statistics to file
+ */
+async function saveStatistics(statistics) {
+  try {
+    await ensureDataDir();
+    await fs.writeFile(
+      STATISTICS_FILE,
+      JSON.stringify(statistics, null, 2),
+      'utf-8'
+    );
+    statisticsCache = null; // Clear cache
+  } catch (error) {
+    console.error('Error saving play statistics:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Get statistics (with caching)
+ */
+async function getStatistics() {
+  if (statisticsCache) {
+    return statisticsCache;
+  }
+  const statistics = await loadStatistics();
+  statisticsCache = statistics;
+  return statistics;
+}
+
+/**
+ * Record a play after 15 seconds
+ */
+export async function recordPlay(trackId, filename, visibility, title, artist, album) {
+  try {
+    const statistics = await getStatistics();
+    const now = new Date();
+    const play = {
+      trackId,
+      filename,
+      title: title || 'Unknown Track',
+      artist: artist || 'Unknown Artist',
+      album: album || null,
+      timestamp: now.toISOString(),
+      date: now.toISOString().split('T')[0], // YYYY-MM-DD
+      visibility,
+    };
+
+    statistics.plays.push(play);
+    await saveStatistics(statistics);
+
+    console.log(`Play recorded: ${title || filename} by ${artist || 'Unknown Artist'} (${visibility})`);
+    return { success: true, totalPlays: statistics.plays.length };
+  } catch (error) {
+    console.error('Error recording play:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Get play count for a specific track (for admin panel)
+ */
+export async function getTrackPlayCount(filename) {
+  const statistics = await getStatistics();
+  const count = statistics.plays.filter((play) => play.filename === filename)
+    .length;
+  return count;
+}
+
+/**
+ * Get play counts for all tracks (for admin panel)
+ */
+export async function getAllTrackPlayCounts() {
+  const statistics = await getStatistics();
+  const counts = {};
+
+  statistics.plays.forEach((play) => {
+    counts[play.filename] = (counts[play.filename] || 0) + 1;
+  });
+
+  return counts;
+}
+
+/**
+ * Get overall statistics
+ */
+export async function getOverallStatistics() {
+  const statistics = await getStatistics();
+  const today = new Date().toISOString().split('T')[0];
+
+  // Calculate totals
+  const totalPlays = statistics.plays.length;
+  const playsToday = statistics.plays.filter((play) => play.date === today)
+    .length;
+
+  // Unique tracks
+  const uniqueTracks = new Set(statistics.plays.map((play) => play.filename))
+    .size;
+
+  // Top tracks (all time) with metadata
+  const trackCounts = {};
+  const trackMetadata = {};
+  statistics.plays.forEach((play) => {
+    trackCounts[play.filename] = (trackCounts[play.filename] || 0) + 1;
+    // Store metadata from first occurrence
+    if (!trackMetadata[play.filename]) {
+      trackMetadata[play.filename] = {
+        title: play.title,
+        artist: play.artist,
+        album: play.album,
+      };
+    }
+  });
+
+  const topTracks = Object.entries(trackCounts)
+    .map(([filename, count]) => ({
+      filename,
+      title: trackMetadata[filename].title,
+      artist: trackMetadata[filename].artist,
+      album: trackMetadata[filename].album,
+      count,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10); // Top 10
+
+  return {
+    totalPlays,
+    playsToday,
+    uniqueTracks,
+    topTracks,
+  };
+}
+
+/**
+ * Get carnival statistics
+ */
+export async function getCarnivalStatistics(includePrivate = false) {
+  const statistics = await getStatistics();
+  const { startDate, endDate, dayNames } = statistics.carnival2026;
+
+  // Filter by carnival dates and visibility
+  const carnivalPlays = statistics.plays.filter((play) => {
+    const inCarnival = play.date >= startDate && play.date <= endDate;
+    const visibilityMatch =
+      includePrivate || play.visibility === 'public';
+    return inCarnival && visibilityMatch;
+  });
+
+  // Calculate totals
+  const totalPlays = carnivalPlays.length;
+  const uniqueTracks = new Set(carnivalPlays.map((play) => play.filename)).size;
+
+  // Top tracks during carnival (with metadata)
+  const trackCounts = {};
+  const trackMetadata = {};
+  carnivalPlays.forEach((play) => {
+    trackCounts[play.filename] = (trackCounts[play.filename] || 0) + 1;
+    // Store metadata from first occurrence
+    if (!trackMetadata[play.filename]) {
+      trackMetadata[play.filename] = {
+        title: play.title,
+        artist: play.artist,
+        album: play.album,
+      };
+    }
+  });
+
+  const topTracks = Object.entries(trackCounts)
+    .map(([filename, count]) => ({
+      filename,
+      title: trackMetadata[filename].title,
+      artist: trackMetadata[filename].artist,
+      album: trackMetadata[filename].album,
+      count,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  // Plays by day
+  const playsByDay = {};
+  carnivalPlays.forEach((play) => {
+    playsByDay[play.date] = (playsByDay[play.date] || 0) + 1;
+  });
+
+  // Add day names
+  const playsByDayWithNames = Object.entries(playsByDay).map(
+    ([date, plays]) => ({
+      date,
+      name: dayNames[date] || date,
+      plays,
+    })
+  );
+
+  // Find biggest day
+  const biggestDay = playsByDayWithNames.sort((a, b) => b.plays - a.plays)[0];
+
+  // First and last track with metadata
+  const firstPlay = carnivalPlays[0];
+  const lastPlay = carnivalPlays[carnivalPlays.length - 1];
+
+  const firstTrack = firstPlay ? {
+    filename: firstPlay.filename,
+    title: firstPlay.title,
+    artist: firstPlay.artist,
+    album: firstPlay.album,
+  } : null;
+
+  const lastTrack = lastPlay ? {
+    filename: lastPlay.filename,
+    title: lastPlay.title,
+    artist: lastPlay.artist,
+    album: lastPlay.album,
+  } : null;
+
+  return {
+    totalPlays,
+    uniqueTracks,
+    topTracks,
+    playsByDay: playsByDayWithNames,
+    biggestDay,
+    firstTrack,
+    lastTrack,
+  };
+}
+
+/**
+ * Get wrapped page enabled status
+ */
+export async function getWrappedStatus() {
+  const statistics = await getStatistics();
+  return statistics.wrappedEnabled;
+}
+
+/**
+ * Set wrapped page enabled status
+ */
+export async function setWrappedEnabled(type, enabled) {
+  if (type !== 'public' && type !== 'private') {
+    throw new Error('Invalid wrapped type. Must be "public" or "private"');
+  }
+
+  const statistics = await getStatistics();
+  statistics.wrappedEnabled[type] = enabled;
+  await saveStatistics(statistics);
+
+  return { success: true, type, enabled };
+}
+
+/**
+ * Check if wrapped page is enabled
+ */
+export async function isWrappedEnabled(type) {
+  const statistics = await getStatistics();
+  return statistics.wrappedEnabled[type] === true;
+}
+
+/**
+ * Clear statistics cache
+ */
+export function clearStatisticsCache() {
+  statisticsCache = null;
+}

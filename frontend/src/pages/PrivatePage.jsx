@@ -54,9 +54,9 @@ const PrivatePage = () => {
         }));
 
         setTracks(tracksWithFullUrls);
-        // Auto-play first track if available
+        // Load first track without autoplay
         if (tracksWithFullUrls.length > 0 && !currentTrack) {
-          playTrack(tracksWithFullUrls[0]);
+          playTrack(tracksWithFullUrls[0], false);
         }
       } else {
         setError('Failed to load tracks');

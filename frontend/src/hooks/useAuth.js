@@ -1,38 +1,40 @@
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../utils/constants';
 
-// TODO: Replace with actual password hash
-// Generate with: echo -n "your-password" | shasum -a 256
-const PASSWORD_HASH = '6ac4acbf83605bd5786249a6c3f72c7cf2b3d7706e62a43c85955fe32603eb15';
-
-export const useAuth = () => {
+export const useAuth = (authType = 'private') => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const storageKey = `juetzlify-auth-${authType}`;
+
   useEffect(() => {
     // Check if user is already authenticated
-    const storedAuth = sessionStorage.getItem('juetzlify-auth');
-    if (storedAuth === PASSWORD_HASH) {
+    const storedAuth = sessionStorage.getItem(storageKey);
+    if (storedAuth === 'true') {
       setIsAuthenticated(true);
     }
     setIsLoading(false);
-  }, []);
+  }, [storageKey]);
 
   const login = async (password) => {
     try {
-      // Hash password using SHA-256
-      const encoder = new TextEncoder();
-      const data = encoder.encode(password);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      const response = await fetch(`${API_BASE_URL}/auth/${authType}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password }),
+      });
 
-      if (hashHex === PASSWORD_HASH) {
-        sessionStorage.setItem('juetzlify-auth', hashHex);
+      const data = await response.json();
+
+      if (data.success) {
+        sessionStorage.setItem(storageKey, 'true');
         setIsAuthenticated(true);
         return { success: true };
       }
 
-      return { success: false, error: 'Invalid password' };
+      return { success: false, error: data.error || 'Invalid password' };
     } catch (error) {
       console.error('Authentication error:', error);
       return { success: false, error: 'Authentication failed' };
@@ -40,7 +42,7 @@ export const useAuth = () => {
   };
 
   const logout = () => {
-    sessionStorage.removeItem('juetzlify-auth');
+    sessionStorage.removeItem(storageKey);
     setIsAuthenticated(false);
   };
 

@@ -5,7 +5,9 @@
       "Bash(npm install:*)",
       "Bash(npx tailwindcss:*)",
       "Bash(npm uninstall:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm start)"
     ]
   }
 }

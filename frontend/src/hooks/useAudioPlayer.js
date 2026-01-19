@@ -10,6 +10,9 @@ export const useAudioPlayer = (tracks = []) => {
   const [volume, setVolume] = useState(1);
   const [queue, setQueue] = useState([]);
   const lastBackwardTimeRef = useRef(0);
+  const playRecordedRef = useRef(false);
+  const playTimerRef = useRef(null);
+  const shouldAutoPlayRef = useRef(true);
 
   // Update audio element when track changes
   useEffect(() => {
@@ -17,11 +20,19 @@ export const useAudioPlayer = (tracks = []) => {
       const streamUrl = API_BASE_URL.replace('/api', '') + `/api/stream/${currentTrack.id}`;
       audioRef.current.src = streamUrl;
       audioRef.current.load();
-      audioRef.current.play().catch(error => {
-        console.error('Playback error:', error);
+
+      // Autoplay if shouldAutoPlay is true (user clicked), otherwise just load
+      if (shouldAutoPlayRef.current) {
+        audioRef.current.play().catch(error => {
+          console.error('Playback error:', error);
+          setIsPlaying(false);
+        });
+        setIsPlaying(true);
+      } else {
         setIsPlaying(false);
-      });
-      setIsPlaying(true);
+        // Reset to true after initial load
+        shouldAutoPlayRef.current = true;
+      }
     }
   }, [currentTrack]);
 
@@ -90,7 +101,47 @@ export const useAudioPlayer = (tracks = []) => {
     }
   }, [volume]);
 
-  const playTrack = (track) => {
+  // Play tracking: Record play after 15 seconds
+  useEffect(() => {
+    // Clear any existing timer
+    if (playTimerRef.current) {
+      clearTimeout(playTimerRef.current);
+      playTimerRef.current = null;
+    }
+
+    // Reset play recorded flag when track changes
+    if (currentTrack) {
+      playRecordedRef.current = false;
+    }
+
+    // Start timer when playing
+    if (isPlaying && currentTrack && !playRecordedRef.current) {
+      playTimerRef.current = setTimeout(async () => {
+        try {
+          await fetch(`${API_BASE_URL}/tracks/${currentTrack.id}/play`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ visibility: currentTrack.visibility }),
+          });
+          playRecordedRef.current = true;
+          console.log(`Play recorded: ${currentTrack.title}`);
+        } catch (error) {
+          console.error('Failed to record play:', error);
+        }
+      }, 15000); // 15 seconds
+    }
+
+    // Cleanup timer on unmount or when dependencies change
+    return () => {
+      if (playTimerRef.current) {
+        clearTimeout(playTimerRef.current);
+        playTimerRef.current = null;
+      }
+    };
+  }, [isPlaying, currentTrack]);
+
+  const playTrack = (track, autoplay = true) => {
+    shouldAutoPlayRef.current = autoplay;
     setCurrentTrack(track);
   };
 

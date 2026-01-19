@@ -13,4 +13,7 @@ export const config = {
   tracksPath: process.env.TRACKS_PATH || join(__dirname, '../../tracks'),
   cachePath: process.env.CACHE_PATH || join(__dirname, '../../cache/album-art'),
   frontendDistPath: join(__dirname, '../../../frontend/dist'),
+  dataPath: process.env.DATA_PATH || join(__dirname, '../../data'),
+  privatePasswordHash: process.env.PRIVATE_PASSWORD_HASH,
+  adminPasswordHash: process.env.ADMIN_PASSWORD_HASH,
 };

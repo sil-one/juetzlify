@@ -32,3 +32,4 @@ backend/tracks/**/*.mp3
 backend/cache/album-art/*.jpg
 backend/cache/album-art/*.jpeg
 backend/cache/album-art/*.png
+/juetzlify.tar.gz
