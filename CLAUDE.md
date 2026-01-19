@@ -72,9 +72,15 @@ docker-compose -f docker/docker-compose.yml up --build
 
 ## Styling
 
-Custom Tailwind colors defined in `tailwind.config.js`:
-- `juetzlify-red`: #F50000
-- `juetzlify-yellow`: #FFCC00
+Spotify-inspired dark theme with custom Tailwind colors defined in `tailwind.config.js`:
+- `sp-black`: #121212 (main background)
+- `sp-dark`: #181818 (cards, surfaces)
+- `sp-gray`: #282828 (elevated elements)
+- `sp-light-gray`: #404040 (hover states)
+- `sp-green`: #2ECC71 (accent color, matches logo)
+- `sp-text`: #FFFFFF (primary text)
+- `sp-text-secondary`: #B3B3B3 (secondary text)
+- `sp-text-muted`: #727272 (muted text)
 
 Color constants also in `frontend/src/utils/constants.js` for JS usage.
 

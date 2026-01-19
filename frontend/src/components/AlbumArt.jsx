@@ -2,17 +2,17 @@ import React from 'react';
 
 const AlbumArt = ({ src, alt = 'Album Art' }) => {
   return (
-    <div className="w-full max-w-md aspect-square mb-8 px-4">
+    <div className="w-full max-w-sm aspect-square mb-8 px-4">
       {src ? (
         <img
           src={src}
           alt={alt}
-          className="w-full h-full object-cover rounded-xl shadow-2xl ring-4 ring-juetzlify-yellow"
+          className="w-full h-full object-cover rounded-lg shadow-2xl shadow-black/50"
         />
       ) : (
-        <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl shadow-2xl flex items-center justify-center ring-4 ring-juetzlify-yellow">
+        <div className="w-full h-full bg-sp-gray rounded-lg shadow-2xl shadow-black/50 flex items-center justify-center">
           <svg
-            className="w-32 h-32 text-juetzlify-yellow opacity-50"
+            className="w-24 h-24 text-sp-text-muted"
             fill="currentColor"
             viewBox="0 0 20 20"
           >

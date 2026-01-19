@@ -1,10 +1,14 @@
+// Spotify-inspired color palette
 export const COLORS = {
-  red: '#F50000',
-  yellow: '#FFCC00',
-  black: '#000000',
-  white: '#FFFFFF',
-  darkGray: '#1a1a1a',
-  lightGray: '#f5f5f5',
+  black: '#121212',
+  dark: '#181818',
+  gray: '#282828',
+  lightGray: '#404040',
+  green: '#2ECC71',
+  greenBright: '#3EDC81',
+  text: '#FFFFFF',
+  textSecondary: '#B3B3B3',
+  textMuted: '#727272',
 };
 
 export const API_BASE_URL = import.meta.env.PROD

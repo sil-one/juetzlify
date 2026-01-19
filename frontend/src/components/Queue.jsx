@@ -8,30 +8,30 @@ const Queue = ({ queue, onRemove, onClear, onPlayTrack }) => {
   return (
     <div className="w-full max-w-2xl mx-auto px-4 pb-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-juetzlify-yellow">As negschts ({queue.length})</h2>
+        <h2 className="text-xl font-bold text-sp-text">As negschts ({queue.length})</h2>
         <button
           onClick={onClear}
-          className="text-sm text-gray-400 hover:text-juetzlify-red transition-colors"
+          className="text-sm text-sp-text-muted hover:text-sp-text transition-colors"
         >
           Clear
         </button>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1">
         {queue.map((track, index) => (
           <div
             key={`${track.id}-${index}`}
-            className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg"
+            className="flex items-center gap-3 p-3 rounded-md hover:bg-sp-gray/60 transition-colors group"
           >
-            <span className="text-gray-500 text-sm w-6">{index + 1}</span>
+            <span className="text-sp-text-muted text-sm w-6 text-right">{index + 1}</span>
             {track.albumArt ? (
               <img
                 src={track.albumArt}
                 alt={track.title}
-                className="w-10 h-10 object-cover rounded"
+                className="w-10 h-10 object-cover rounded shadow-md"
               />
             ) : (
-              <div className="w-10 h-10 bg-gray-700 rounded flex items-center justify-center">
-                <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+              <div className="w-10 h-10 bg-sp-gray rounded flex items-center justify-center shadow-md">
+                <svg className="w-5 h-5 text-sp-text-muted" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
                 </svg>
               </div>
@@ -40,12 +40,12 @@ const Queue = ({ queue, onRemove, onClear, onPlayTrack }) => {
               onClick={() => onPlayTrack(track)}
               className="flex-1 min-w-0 text-left"
             >
-              <p className="text-white text-sm font-medium truncate">{track.title}</p>
-              <p className="text-gray-400 text-xs truncate">{track.artist}</p>
+              <p className="text-sp-text text-sm font-medium truncate">{track.title}</p>
+              <p className="text-sp-text-secondary text-xs truncate">{track.artist}</p>
             </button>
             <button
               onClick={() => onRemove(index)}
-              className="p-2 text-gray-400 hover:text-juetzlify-red transition-colors"
+              className="p-2 text-sp-text-muted hover:text-sp-text opacity-0 group-hover:opacity-100 transition-all rounded-full hover:bg-sp-light-gray"
               title="Remove from queue"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,25 +1,22 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LOGO_ASPECT_RATIO } from '../utils/constants';
 
 const Header = ({ isAuthenticated, onLogout }) => {
   const location = useLocation();
 
   return (
-    <header className="bg-juetzlify-yellow border-b-4 border-black sticky top-0 z-50 shadow-xl">
-      <div className="max-w-7xl mx-auto px-4 py-4">
+    <header className="bg-sp-black/95 backdrop-blur-md sticky top-0 z-50 border-b border-white/5">
+      <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-center">
-          {/* Logo and Title - DHL Style */}
-          <Link to="/" className="flex items-center gap-4 hover:scale-105 transition-transform">
+          <Link to="/" className="flex items-center gap-3 group">
             <img
               src="/juetzlify_logo.png"
               alt="Jützlify Logo"
-              className="h-16 drop-shadow-2xl"
-              style={{ aspectRatio: LOGO_ASPECT_RATIO }}
+              className="h-12 w-12 rounded-full shadow-lg shadow-sp-green/20 group-hover:shadow-sp-green/40 transition-shadow duration-300"
             />
-            <div className="dhl-style-logo text-3xl md:text-4xl">
-              <span className="text-juetzlify-red" style={{ WebkitTextStroke: '2px black', textStroke: '2px black' }}>Jützlify</span>
-            </div>
+            <span className="text-2xl font-bold tracking-tight">
+              <span className="text-sp-text group-hover:text-sp-green transition-colors duration-300">Jützlify</span>
+            </span>
           </Link>
         </div>
       </div>

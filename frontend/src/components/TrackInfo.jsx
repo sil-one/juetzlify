@@ -2,20 +2,20 @@ import React from 'react';
 
 const TrackInfo = ({ title, artist, album, trackNo, trackTotal }) => {
   return (
-    <div className="text-center mb-8 px-4">
+    <div className="text-center mb-4 px-4 max-w-md">
+      <h1 className="text-2xl md:text-3xl font-bold mb-2 text-sp-text truncate">{title}</h1>
+      <p className="text-lg text-sp-text-secondary truncate">{artist}</p>
       {(trackNo || album) && (
-        <p className="text-sm md:text-base text-juetzlify-yellow font-semibold mb-2">
+        <p className="text-sm text-sp-text-muted mt-2">
           {album && <span>{album}</span>}
-          {album && trackNo && <span> • </span>}
+          {album && trackNo && <span> · </span>}
           {trackNo && (
             <span>
-              Liäd Nummer {trackNo}{trackTotal && `/${trackTotal}`}
+              Track {trackNo}{trackTotal && ` of ${trackTotal}`}
             </span>
           )}
         </p>
       )}
-      <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white drop-shadow-lg">{title}</h1>
-      <p className="text-xl md:text-2xl text-juetzlify-yellow font-semibold">{artist}</p>
     </div>
   );
 };
