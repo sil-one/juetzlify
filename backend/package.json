@@ -1,7 +1,7 @@
 {
-  "name": "juetzli-fm-backend",
+  "name": "juetzlify-backend",
   "version": "1.0.0",
-  "description": "Backend for Jützli FM music streaming",
+  "description": "Backend for Jützlify music streaming",
   "main": "src/server.js",
   "type": "module",
   "scripts": {

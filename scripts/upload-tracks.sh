@@ -3,10 +3,10 @@
 # Configuration
 VPS_USER="${VPS_USER:-your-user}"
 VPS_IP="${VPS_IP:-your-vps-ip}"
-VPS_PATH="${VPS_PATH:-/opt/juetzli-fm/tracks}"
+VPS_PATH="${VPS_PATH:-/opt/juetzlify/tracks}"
 
 usage() {
-  echo "Upload MP3 tracks to Jützli FM on VPS"
+  echo "Upload MP3 tracks to Jützlify on VPS"
   echo ""
   echo "Usage: $0 [public|private] <path-to-mp3-files>"
   echo ""
@@ -17,7 +17,7 @@ usage() {
   echo "Environment variables:"
   echo "  VPS_USER  - SSH username (default: your-user)"
   echo "  VPS_IP    - VPS IP address (default: your-vps-ip)"
-  echo "  VPS_PATH  - Path on VPS (default: /opt/juetzli-fm/tracks)"
+  echo "  VPS_PATH  - Path on VPS (default: /opt/juetzlify/tracks)"
   echo ""
   echo "Example with custom settings:"
   echo "  VPS_USER=admin VPS_IP=192.168.1.100 $0 public *.mp3"
@@ -49,7 +49,7 @@ if [ $? -eq 0 ]; then
   echo "✓ Files uploaded successfully!"
   echo ""
   echo "Restarting container to refresh metadata..."
-  ssh $VPS_USER@$VPS_IP "docker restart juetzli-fm"
+  ssh $VPS_USER@$VPS_IP "docker restart juetzlify"
 
   if [ $? -eq 0 ]; then
     echo ""
@@ -57,7 +57,7 @@ if [ $? -eq 0 ]; then
   else
     echo ""
     echo "⚠️  Upload succeeded, but couldn't restart container."
-    echo "You may need to manually run: docker restart juetzli-fm"
+    echo "You may need to manually run: docker restart juetzlify"
   fi
 else
   echo ""

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Jützli FM is a mobile-first music streaming SPA with a two-tier track library (public and password-protected private tracks). Album art is extracted from MP3 ID3 tags.
+Jützlify is a mobile-first music streaming SPA with a two-tier track library (public and password-protected private tracks). Album art is extracted from MP3 ID3 tags.
 
 **Stack**: React 19 + Vite frontend, Express + Node.js backend, Tailwind CSS styling
 
@@ -35,7 +35,7 @@ cd frontend && npm run lint
 
 ### Docker
 ```bash
-docker build -f docker/Dockerfile -t juetzli-fm .
+docker build -f docker/Dockerfile -t juetzlify .
 docker-compose -f docker/docker-compose.yml up --build
 ```
 
@@ -73,8 +73,8 @@ docker-compose -f docker/docker-compose.yml up --build
 ## Styling
 
 Custom Tailwind colors defined in `tailwind.config.js`:
-- `juetzli-red`: #F50000
-- `juetzli-yellow`: #FFCC00
+- `juetzlify-red`: #F50000
+- `juetzlify-yellow`: #FFCC00
 
 Color constants also in `frontend/src/utils/constants.js` for JS usage.
 

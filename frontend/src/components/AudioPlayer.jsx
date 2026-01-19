@@ -77,7 +77,7 @@ const AudioPlayer = ({
               {/* Play/Pause button */}
               <button
                 onClick={onTogglePlay}
-                className="bg-juetzli-red hover:bg-red-600 text-white p-4 rounded-full transition-all hover:scale-110 shadow-lg"
+                className="bg-juetzlify-red hover:bg-red-600 text-white p-4 rounded-full transition-all hover:scale-110 shadow-lg"
                 title={isPlaying ? 'Paisä' : 'Spielä'}
               >
                 {isPlaying ? (

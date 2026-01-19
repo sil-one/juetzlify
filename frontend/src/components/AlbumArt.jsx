@@ -7,12 +7,12 @@ const AlbumArt = ({ src, alt = 'Album Art' }) => {
         <img
           src={src}
           alt={alt}
-          className="w-full h-full object-cover rounded-xl shadow-2xl ring-4 ring-juetzli-yellow"
+          className="w-full h-full object-cover rounded-xl shadow-2xl ring-4 ring-juetzlify-yellow"
         />
       ) : (
-        <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl shadow-2xl flex items-center justify-center ring-4 ring-juetzli-yellow">
+        <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl shadow-2xl flex items-center justify-center ring-4 ring-juetzlify-yellow">
           <svg
-            className="w-32 h-32 text-juetzli-yellow opacity-50"
+            className="w-32 h-32 text-juetzlify-yellow opacity-50"
             fill="currentColor"
             viewBox="0 0 20 20"
           >

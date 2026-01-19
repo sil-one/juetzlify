@@ -1,4 +1,4 @@
-# Jützli FM
+# Jützlify
 
 A mobile-first music streaming web application with a sleek, minimal design.
 
@@ -21,7 +21,7 @@ A mobile-first music streaming web application with a sleek, minimal design.
 ## Project Structure
 
 ```
-juetzli-fm/
+juetzlify/
 ├── frontend/           # React frontend
 │   ├── src/
 │   │   ├── components/ # UI components
@@ -58,7 +58,7 @@ juetzli-fm/
 1. **Clone the repository**
    ```bash
    git clone <your-repo-url>
-   cd juetzli-fm
+   cd juetzlify
    ```
 
 2. **Install dependencies**
@@ -141,9 +141,9 @@ docker-compose up --build
    ssh user@your-vps-ip
 
    # Create directories
-   sudo mkdir -p /opt/juetzli-fm/tracks/public
-   sudo mkdir -p /opt/juetzli-fm/tracks/private
-   sudo mkdir -p /opt/juetzli-fm/cache
+   sudo mkdir -p /opt/juetzlify/tracks/public
+   sudo mkdir -p /opt/juetzlify/tracks/private
+   sudo mkdir -p /opt/juetzlify/cache
 
    # Install Docker if needed
    curl -fsSL https://get.docker.com -o get-docker.sh
@@ -153,28 +153,28 @@ docker-compose up --build
 2. **Build and deploy** (on your local machine):
    ```bash
    # Build Docker image
-   docker build -f docker/Dockerfile -t juetzli-fm .
+   docker build -f docker/Dockerfile -t juetzlify .
 
    # Save and transfer
-   docker save juetzli-fm | gzip > juetzli-fm.tar.gz
-   scp juetzli-fm.tar.gz user@your-vps-ip:/tmp/
+   docker save juetzlify | gzip > juetzlify.tar.gz
+   scp juetzlify.tar.gz user@your-vps-ip:/tmp/
 
    # On VPS: Load and run
    ssh user@your-vps-ip
-   docker load < /tmp/juetzli-fm.tar.gz
+   docker load < /tmp/juetzlify.tar.gz
    docker run -d \
      -p 80:3000 \
-     -v /opt/juetzli-fm/tracks:/app/backend/tracks \
-     -v /opt/juetzli-fm/cache:/app/backend/cache \
-     --name juetzli-fm \
+     -v /opt/juetzlify/tracks:/app/backend/tracks \
+     -v /opt/juetzlify/cache:/app/backend/cache \
+     --name juetzlify \
      --restart unless-stopped \
-     juetzli-fm
+     juetzlify
    ```
 
 3. **Verify deployment**
    ```bash
    # Check logs
-   docker logs juetzli-fm
+   docker logs juetzlify
 
    # Check status
    docker ps
@@ -202,10 +202,10 @@ Or manually with SCP:
 
 ```bash
 # Upload files
-scp song.mp3 user@vps-ip:/opt/juetzli-fm/tracks/public/
+scp song.mp3 user@vps-ip:/opt/juetzlify/tracks/public/
 
 # Restart container to refresh metadata
-ssh user@vps-ip "docker restart juetzli-fm"
+ssh user@vps-ip "docker restart juetzlify"
 ```
 
 ### Move Track Between Libraries
@@ -215,10 +215,10 @@ ssh user@vps-ip "docker restart juetzli-fm"
 ssh user@vps-ip
 
 # Move from public to private
-mv /opt/juetzli-fm/tracks/public/song.mp3 /opt/juetzli-fm/tracks/private/
+mv /opt/juetzlify/tracks/public/song.mp3 /opt/juetzlify/tracks/private/
 
 # Restart to refresh
-docker restart juetzli-fm
+docker restart juetzlify
 ```
 
 ## API Endpoints
@@ -248,7 +248,7 @@ Edit `frontend/src/utils/constants.js`:
 
 ```javascript
 export const COLORS = {
-  primary: '#F50000',  // Jützli red
+  primary: '#F50000',  // Jützlify red
   black: '#000000',
   white: '#FFFFFF',
 };
@@ -256,7 +256,7 @@ export const COLORS = {
 
 ## Color Scheme
 
-- **Primary**: #F50000 (Jützli Red)
+- **Primary**: #F50000 (Jützlify Red)
 - **Background**: #000000 (Black)
 - **Text**: #FFFFFF (White)
 - **Accents**: Gray shades
@@ -278,10 +278,10 @@ export const COLORS = {
 
 ```bash
 # Check backend logs
-docker logs juetzli-fm
+docker logs juetzlify
 
 # Verify MP3 files exist
-docker exec juetzli-fm ls -la /app/backend/tracks/public
+docker exec juetzlify ls -la /app/backend/tracks/public
 
 # Refresh cache
 curl -X POST http://your-vps-ip/api/tracks/refresh
@@ -297,14 +297,14 @@ curl -X POST http://your-vps-ip/api/tracks/refresh
 
 ```bash
 # Check logs
-docker logs juetzli-fm
+docker logs juetzlify
 
 # Verify volumes exist
-ls -la /opt/juetzli-fm/
+ls -la /opt/juetzlify/
 
 # Test build locally
-docker build -f docker/Dockerfile -t juetzli-fm-test .
-docker run --rm -p 3000:3000 juetzli-fm-test
+docker build -f docker/Dockerfile -t juetzlify-test .
+docker run --rm -p 3000:3000 juetzlify-test
 ```
 
 ## Development

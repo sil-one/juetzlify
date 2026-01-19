@@ -8,10 +8,10 @@ const Queue = ({ queue, onRemove, onClear, onPlayTrack }) => {
   return (
     <div className="w-full max-w-2xl mx-auto px-4 pb-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-juetzli-yellow">As negschts ({queue.length})</h2>
+        <h2 className="text-xl font-bold text-juetzlify-yellow">As negschts ({queue.length})</h2>
         <button
           onClick={onClear}
-          className="text-sm text-gray-400 hover:text-juetzli-red transition-colors"
+          className="text-sm text-gray-400 hover:text-juetzlify-red transition-colors"
         >
           Clear
         </button>
@@ -45,7 +45,7 @@ const Queue = ({ queue, onRemove, onClear, onPlayTrack }) => {
             </button>
             <button
               onClick={() => onRemove(index)}
-              className="p-2 text-gray-400 hover:text-juetzli-red transition-colors"
+              className="p-2 text-gray-400 hover:text-juetzlify-red transition-colors"
               title="Remove from queue"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

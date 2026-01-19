@@ -10,7 +10,7 @@ export const useAuth = () => {
 
   useEffect(() => {
     // Check if user is already authenticated
-    const storedAuth = sessionStorage.getItem('juetzli-auth');
+    const storedAuth = sessionStorage.getItem('juetzlify-auth');
     if (storedAuth === PASSWORD_HASH) {
       setIsAuthenticated(true);
     }
@@ -27,7 +27,7 @@ export const useAuth = () => {
       const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
       if (hashHex === PASSWORD_HASH) {
-        sessionStorage.setItem('juetzli-auth', hashHex);
+        sessionStorage.setItem('juetzlify-auth', hashHex);
         setIsAuthenticated(true);
         return { success: true };
       }
@@ -40,7 +40,7 @@ export const useAuth = () => {
   };
 
   const logout = () => {
-    sessionStorage.removeItem('juetzli-auth');
+    sessionStorage.removeItem('juetzlify-auth');
     setIsAuthenticated(false);
   };
 

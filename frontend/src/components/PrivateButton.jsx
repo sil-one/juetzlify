@@ -11,16 +11,16 @@ const PrivateButton = () => {
       {location.pathname === '/private' && isAuthenticated && (
         <button
           onClick={logout}
-          className="px-3 py-2 bg-gray-800 text-gray-400 hover:text-juetzli-yellow rounded-lg text-sm transition-colors"
+          className="px-3 py-2 bg-gray-800 text-gray-400 hover:text-juetzlify-yellow rounded-lg text-sm transition-colors"
         >
           Logout
         </button>
       )}
       <Link
         to="/private"
-        className="px-4 py-2 bg-black text-juetzli-yellow hover:bg-gray-900 rounded-lg text-sm font-semibold transition-all hover:scale-105 shadow-lg"
+        className="px-4 py-2 bg-black text-juetzlify-yellow hover:bg-gray-900 rounded-lg text-sm font-semibold transition-all hover:scale-105 shadow-lg"
       >
-        🔒 Jützli Intern
+        🔒 Jützlify Intern
       </Link>
     </div>
   );

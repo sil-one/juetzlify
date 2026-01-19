@@ -7,8 +7,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        'juetzli-red': '#F50000',
-        'juetzli-yellow': '#FFCC00',
+        'juetzlify-red': '#F50000',
+        'juetzlify-yellow': '#FFCC00',
       },
     },
   },

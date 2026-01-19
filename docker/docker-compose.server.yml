@@ -1,7 +1,7 @@
 services:
-  juetzli-fm:
-    image: juetzli-fm
-    container_name: juetzli-fm
+  juetzlify:
+    image: juetzlify
+    container_name: juetzlify
     expose:
       - "3000"
     volumes:
@@ -23,7 +23,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - juetzli-fm
+      - juetzlify
     restart: unless-stopped
 
 volumes:
@@ -31,7 +31,7 @@ volumes:
   caddy_config:
 
 # Usage on server:
-# 1. Load the image: gunzip -c juetzli-fm.tar.gz | docker load
+# 1. Load the image: gunzip -c juetzlify.tar.gz | docker load
 # 2. Create directories: mkdir -p tracks/public tracks/private cache
 # 3. Copy this file and Caddyfile to server
 # 4. Rename to docker-compose.yml or run: docker-compose -f docker-compose.server.yml up -d

@@ -11,4 +11,4 @@ export const API_BASE_URL = import.meta.env.PROD
   ? '/api'
   : 'http://localhost:3000/api';
 
-export const LOGO_ASPECT_RATIO = 220 / 280; // width:height
+export const LOGO_ASPECT_RATIO = 1; // width:height (square 800x800)

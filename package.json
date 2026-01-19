@@ -1,7 +1,7 @@
 {
-  "name": "juetzli-fm",
+  "name": "juetzlify",
   "version": "1.0.0",
-  "description": "Jützli FM - Mobile-first music streaming SPA",
+  "description": "Jützlify - Mobile-first music streaming SPA",
   "private": true,
   "workspaces": [
     "frontend",

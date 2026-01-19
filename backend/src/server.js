@@ -51,7 +51,7 @@ if (config.nodeEnv === 'production') {
 
 // Start server and load tracks
 app.listen(PORT, '0.0.0.0', async () => {
-  console.log(`\n🎵 Jützli FM server running on port ${PORT}`);
+  console.log(`\n🎵 Jützlify server running on port ${PORT}`);
   console.log(`Environment: ${config.nodeEnv}`);
   console.log(`Tracks path: ${config.tracksPath}`);
   console.log(`Cache path: ${config.cachePath}\n`);

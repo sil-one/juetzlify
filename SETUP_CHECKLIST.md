@@ -1,4 +1,4 @@
-# Setup Checklist for Jützli FM
+# Setup Checklist for Jützlify
 
 Complete these steps before deploying:
 
@@ -66,26 +66,26 @@ npm run dev:frontend
 ./scripts/build.sh
 
 # Build Docker image
-docker build -f docker/Dockerfile -t juetzli-fm .
+docker build -f docker/Dockerfile -t juetzlify .
 
 # Save and transfer to VPS
-docker save juetzli-fm | gzip > juetzli-fm.tar.gz
-scp juetzli-fm.tar.gz user@vps-ip:/tmp/
+docker save juetzlify | gzip > juetzlify.tar.gz
+scp juetzlify.tar.gz user@vps-ip:/tmp/
 
 # On VPS: Setup directories
 ssh user@vps-ip
-sudo mkdir -p /opt/juetzli-fm/tracks/{public,private}
-sudo mkdir -p /opt/juetzli-fm/cache
+sudo mkdir -p /opt/juetzlify/tracks/{public,private}
+sudo mkdir -p /opt/juetzlify/cache
 
 # Load and run container
-docker load < /tmp/juetzli-fm.tar.gz
+docker load < /tmp/juetzlify.tar.gz
 docker run -d \
   -p 80:3000 \
-  -v /opt/juetzli-fm/tracks:/app/backend/tracks \
-  -v /opt/juetzli-fm/cache:/app/backend/cache \
-  --name juetzli-fm \
+  -v /opt/juetzlify/tracks:/app/backend/tracks \
+  -v /opt/juetzlify/cache:/app/backend/cache \
+  --name juetzlify \
   --restart unless-stopped \
-  juetzli-fm
+  juetzlify
 ```
 
 #### Option B: Docker Compose (Local Testing)
@@ -103,8 +103,8 @@ docker-compose up --build
 ./scripts/upload-tracks.sh private ~/Music/PrivateAlbum/*.mp3
 
 # Or manually
-scp ~/Music/*.mp3 user@vps-ip:/opt/juetzli-fm/tracks/public/
-ssh user@vps-ip "docker restart juetzli-fm"
+scp ~/Music/*.mp3 user@vps-ip:/opt/juetzlify/tracks/public/
+ssh user@vps-ip "docker restart juetzlify"
 ```
 
 ### 7. Verify Deployment
@@ -121,7 +121,7 @@ ssh user@vps-ip "docker restart juetzli-fm"
 ### Monitor Logs
 ```bash
 # View logs
-docker logs juetzli-fm -f
+docker logs juetzlify -f
 
 # Check running containers
 docker ps
@@ -130,19 +130,19 @@ docker ps
 ### Update Application
 ```bash
 # Rebuild and redeploy
-docker build -f docker/Dockerfile -t juetzli-fm .
-docker save juetzli-fm | gzip > juetzli-fm.tar.gz
-scp juetzli-fm.tar.gz user@vps-ip:/tmp/
+docker build -f docker/Dockerfile -t juetzlify .
+docker save juetzlify | gzip > juetzlify.tar.gz
+scp juetzlify.tar.gz user@vps-ip:/tmp/
 
 # On VPS
 ssh user@vps-ip
-docker stop juetzli-fm
-docker rm juetzli-fm
-docker load < /tmp/juetzli-fm.tar.gz
+docker stop juetzlify
+docker rm juetzlify
+docker load < /tmp/juetzlify.tar.gz
 docker run -d -p 80:3000 \
-  -v /opt/juetzli-fm/tracks:/app/backend/tracks \
-  -v /opt/juetzli-fm/cache:/app/backend/cache \
-  --name juetzli-fm --restart unless-stopped juetzli-fm
+  -v /opt/juetzlify/tracks:/app/backend/tracks \
+  -v /opt/juetzlify/cache:/app/backend/cache \
+  --name juetzlify --restart unless-stopped juetzlify
 ```
 
 ### Add More Tracks
@@ -168,8 +168,8 @@ docker run -d -p 80:3000 \
 
 ### Tracks Not Loading
 - Check MP3 files exist in correct directory
-- View logs: `docker logs juetzli-fm`
-- Restart container: `docker restart juetzli-fm`
+- View logs: `docker logs juetzlify`
+- Restart container: `docker restart juetzlify`
 - Verify file permissions on VPS
 
 ### Album Art Not Showing

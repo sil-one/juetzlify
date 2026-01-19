@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🎵 Building Jützli FM..."
+echo "🎵 Building Jützlify..."
 echo ""
 
 # Install dependencies if needed
@@ -33,5 +33,5 @@ echo ""
 echo "Frontend build output: frontend/dist/"
 echo ""
 echo "Next steps:"
-echo "  - For Docker deployment: docker build -f docker/Dockerfile -t juetzli-fm ."
+echo "  - For Docker deployment: docker build -f docker/Dockerfile -t juetzlify ."
 echo "  - For local testing: npm run dev:backend (in one terminal) and npm run dev:frontend (in another)"

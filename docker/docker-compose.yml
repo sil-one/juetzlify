@@ -1,9 +1,9 @@
 services:
-  juetzli-fm:
+  juetzlify:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    container_name: juetzli-fm
+    container_name: juetzlify
     expose:
       - "3000"
     volumes:
@@ -27,7 +27,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - juetzli-fm
+      - juetzlify
     restart: unless-stopped
 
 volumes:

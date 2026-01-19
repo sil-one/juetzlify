@@ -23,8 +23,8 @@
 
   /* Player button styling */
   .player-button {
-    @apply bg-gradient-to-r from-juetzli-red to-red-600 text-white py-4 px-8 rounded-full text-lg font-bold;
-    @apply hover:from-red-600 hover:to-juetzli-red active:scale-95 transition-all shadow-lg;
+    @apply bg-gradient-to-r from-juetzlify-red to-red-600 text-white py-4 px-8 rounded-full text-lg font-bold;
+    @apply hover:from-red-600 hover:to-juetzlify-red active:scale-95 transition-all shadow-lg;
     min-width: 120px;
     min-height: 56px; /* Touch-friendly */
   }
@@ -35,10 +35,10 @@
   }
 
   input[type="range"]::-webkit-slider-thumb {
-    @apply appearance-none w-7 h-7 bg-gradient-to-br from-juetzli-yellow to-yellow-500 rounded-full cursor-pointer shadow-lg border-2 border-white;
+    @apply appearance-none w-7 h-7 bg-gradient-to-br from-juetzlify-yellow to-yellow-500 rounded-full cursor-pointer shadow-lg border-2 border-white;
   }
 
   input[type="range"]::-moz-range-thumb {
-    @apply w-7 h-7 bg-gradient-to-br from-juetzli-yellow to-yellow-500 rounded-full cursor-pointer shadow-lg border-2 border-white;
+    @apply w-7 h-7 bg-gradient-to-br from-juetzlify-yellow to-yellow-500 rounded-full cursor-pointer shadow-lg border-2 border-white;
   }
 }
