@@ -11,9 +11,10 @@ services:
       - ./tracks:/app/backend/tracks
       # Persist album art cache
       - ./cache:/app/backend/cache
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
+      # Persist track visibility data
+      - ./data:/app/backend/data
+    env_file:
+      - ./backend/.env
     restart: unless-stopped
 
   caddy:
@@ -34,5 +35,7 @@ volumes:
   caddy_data:
   caddy_config:
 
-# Setup on server:
-# mkdir -p tracks/public tracks/private cache
+# Setup:
+# 1. Create backend/.env file with your password hashes
+# 2. mkdir -p tracks/all cache data backend
+# 3. docker-compose up -d

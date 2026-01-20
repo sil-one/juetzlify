@@ -26,10 +26,10 @@ COPY --from=backend-builder /app/backend ./backend
 # Copy built frontend
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# Create directories for tracks and cache
-RUN mkdir -p /app/backend/tracks/public \
-             /app/backend/tracks/private \
-             /app/backend/cache/album-art
+# Create directories for tracks, cache, and data
+RUN mkdir -p /app/backend/tracks/all \
+             /app/backend/cache/album-art \
+             /app/backend/data
 
 WORKDIR /app/backend
 

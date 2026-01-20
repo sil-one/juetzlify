@@ -275,10 +275,15 @@ const TrackList = ({ tracks, currentTrack, onTrackSelect, onAddToQueue }) => {
     // Sort tracks within each album by track number
     Object.values(groups).forEach((group) => {
       group.tracks.sort((a, b) => {
-        // Explicitly convert to numbers to ensure numeric sorting
-        const aTrack = Number(a.trackNo) || 999;
-        const bTrack = Number(b.trackNo) || 999;
-        return aTrack - bTrack;
+        // Parse track numbers, handling nulls and non-numeric values
+        const aTrack = a.trackNo != null ? parseInt(String(a.trackNo), 10) : 999;
+        const bTrack = b.trackNo != null ? parseInt(String(b.trackNo), 10) : 999;
+
+        // If parsing failed, use 999 as fallback
+        const aNum = isNaN(aTrack) ? 999 : aTrack;
+        const bNum = isNaN(bTrack) ? 999 : bTrack;
+
+        return aNum - bNum;
       });
     });
 
@@ -403,7 +408,8 @@ const AlbumGroup = ({ group, currentTrack, onTrackSelect, onAddToQueue }) => {
       <div className="space-y-1">
         {group.tracks.map((track, trackIndex) => {
           const isCurrentTrack = currentTrack?.id === track.id;
-          const displayNumber = track.trackNo || trackIndex + 1;
+          // Always use sequential numbering within the album, not the metadata track number
+          const displayNumber = trackIndex + 1;
 
           return (
             <TrackItem

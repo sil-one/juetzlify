@@ -1,4 +1,7 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs/promises';
 import {
   migrateTracks,
   setTrackVisibility,
@@ -13,8 +16,86 @@ import {
   getWrappedStatus,
   setWrappedEnabled,
 } from '../services/playStatisticsService.js';
+import { config } from '../config/config.js';
 
 const router = express.Router();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: async (req, file, cb) => {
+    const uploadPath = path.join(config.tracksPath, 'all');
+    try {
+      await fs.mkdir(uploadPath, { recursive: true });
+      cb(null, uploadPath);
+    } catch (error) {
+      cb(error);
+    }
+  },
+  filename: (req, file, cb) => {
+    // Sanitize filename
+    const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+    cb(null, sanitizedName);
+  },
+});
+
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    // Only accept MP3 files
+    if (file.mimetype === 'audio/mpeg' || file.originalname.toLowerCase().endsWith('.mp3')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only MP3 files are allowed'));
+    }
+  },
+  limits: {
+    fileSize: 100 * 1024 * 1024, // 100MB max file size
+  },
+});
+
+/**
+ * POST /api/admin/upload
+ * Upload new MP3 track(s)
+ */
+router.post('/upload', upload.array('tracks', 10), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No files uploaded',
+      });
+    }
+
+    const uploadedTracks = [];
+
+    // Set all uploaded tracks to disabled visibility
+    for (const file of req.files) {
+      await setTrackVisibility(file.filename, Visibility.DISABLED);
+      uploadedTracks.push({
+        filename: file.filename,
+        originalName: file.originalname,
+        size: file.size,
+      });
+    }
+
+    // Clear caches to reload with new tracks
+    clearVisibilityCache();
+    refreshCache();
+
+    res.json({
+      success: true,
+      message: `${uploadedTracks.length} track(s) uploaded successfully`,
+      tracks: uploadedTracks,
+    });
+  } catch (error) {
+    console.error('Error uploading tracks:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Upload failed',
+      message: error.message,
+    });
+  }
+});
 
 /**
  * POST /api/admin/migrate

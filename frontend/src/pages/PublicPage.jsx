@@ -25,6 +25,7 @@ const PublicPage = () => {
     addToQueue,
     removeFromQueue,
     clearQueue,
+    reorderQueue,
     handleTimeUpdate,
     handleLoadedMetadata,
     handleEnded,
@@ -100,6 +101,7 @@ const PublicPage = () => {
         onRemove={removeFromQueue}
         onClear={clearQueue}
         onPlayTrack={playTrack}
+        onReorder={reorderQueue}
       />
       <TrackList
         tracks={tracks}

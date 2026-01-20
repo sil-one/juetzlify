@@ -12,6 +12,9 @@ const AdminPage = () => {
   const [migrationStatus, setMigrationStatus] = useState(null);
   const [playCounts, setPlayCounts] = useState({});
   const [totalPlays, setTotalPlays] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -113,6 +116,75 @@ const AdminPage = () => {
     }
   };
 
+  const handleFileUpload = async (files) => {
+    if (!files || files.length === 0) return;
+
+    // Filter for MP3 files only
+    const mp3Files = Array.from(files).filter(
+      file => file.type === 'audio/mpeg' || file.name.toLowerCase().endsWith('.mp3')
+    );
+
+    if (mp3Files.length === 0) {
+      alert('Please select MP3 files only');
+      return;
+    }
+
+    const formData = new FormData();
+    mp3Files.forEach(file => {
+      formData.append('tracks', file);
+    });
+
+    try {
+      setIsUploading(true);
+      setUploadProgress(`Uploading ${mp3Files.length} track(s)...`);
+
+      const response = await fetch(`${API_BASE_URL}/admin/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setUploadProgress(`Successfully uploaded ${mp3Files.length} track(s)`);
+        // Refresh tracks list
+        await fetchTracks();
+        setTimeout(() => setUploadProgress(null), 3000);
+      } else {
+        alert(`Upload failed: ${data.error}`);
+        setUploadProgress(null);
+      }
+    } catch (err) {
+      console.error('Error uploading tracks:', err);
+      alert('Failed to upload tracks');
+      setUploadProgress(null);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileUpload(e.dataTransfer.files);
+  };
+
+  const handleFileInputChange = (e) => {
+    handleFileUpload(e.target.files);
+    // Reset input
+    e.target.value = '';
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-sp-black flex items-center justify-center">
@@ -176,6 +248,65 @@ const AdminPage = () => {
             <div className="text-sp-text-secondary text-sm mb-1">Total Plays</div>
             <div className="text-3xl font-bold text-sp-green">{totalPlays.toLocaleString()}</div>
           </div>
+        </div>
+
+        {/* Upload Section */}
+        <div className="bg-sp-dark rounded-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold mb-4">Upload Tracks</h2>
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-all ${
+              isDragging
+                ? 'border-sp-green bg-sp-green/10'
+                : 'border-sp-gray hover:border-sp-light-gray'
+            } ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+          >
+            <input
+              type="file"
+              id="file-upload"
+              accept=".mp3,audio/mpeg"
+              multiple
+              onChange={handleFileInputChange}
+              className="hidden"
+              disabled={isUploading}
+            />
+            <label
+              htmlFor="file-upload"
+              className="cursor-pointer flex flex-col items-center gap-4"
+            >
+              <svg
+                className="w-16 h-16 text-sp-text-muted"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
+              </svg>
+              <div>
+                <p className="text-xl font-semibold text-sp-text mb-2">
+                  {isDragging ? 'Drop files here' : 'Drag and drop MP3 files here'}
+                </p>
+                <p className="text-sp-text-secondary">
+                  or click to browse (max 10 files, 100MB each)
+                </p>
+              </div>
+            </label>
+            {uploadProgress && (
+              <div className="mt-4 px-4 py-2 bg-sp-green/20 text-sp-green rounded-lg inline-block">
+                {uploadProgress}
+              </div>
+            )}
+          </div>
+          <p className="text-sm text-sp-text-muted mt-3">
+            Uploaded tracks will be set to "disabled" visibility by default. Change visibility below to make them accessible.
+          </p>
         </div>
 
         {/* Track List */}

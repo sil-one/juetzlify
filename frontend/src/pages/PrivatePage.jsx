@@ -29,6 +29,7 @@ const PrivatePage = () => {
     addToQueue,
     removeFromQueue,
     clearQueue,
+    reorderQueue,
     handleTimeUpdate,
     handleLoadedMetadata,
     handleEnded,
@@ -127,6 +128,7 @@ const PrivatePage = () => {
         onRemove={removeFromQueue}
         onClear={clearQueue}
         onPlayTrack={playTrack}
+        onReorder={reorderQueue}
       />
       <TrackList
         tracks={tracks}

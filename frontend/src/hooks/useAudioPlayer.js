@@ -8,7 +8,16 @@ export const useAudioPlayer = (tracks = []) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
-  const [queue, setQueue] = useState([]);
+  const [queue, setQueue] = useState(() => {
+    // Load queue from localStorage on mount
+    try {
+      const saved = localStorage.getItem('juetzlify-queue');
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.error('Failed to load queue from localStorage:', error);
+      return [];
+    }
+  });
   const lastBackwardTimeRef = useRef(0);
   const playRecordedRef = useRef(false);
   const playTimerRef = useRef(null);
@@ -50,56 +59,21 @@ export const useAudioPlayer = (tracks = []) => {
     });
   }, [currentTrack]);
 
-  // Media Session action handlers
-  useEffect(() => {
-    if (!('mediaSession' in navigator)) return;
-
-    const actionHandlers = {
-      play: () => {
-        if (audioRef.current) {
-          audioRef.current.play();
-          setIsPlaying(true);
-        }
-      },
-      pause: () => {
-        if (audioRef.current) {
-          audioRef.current.pause();
-          setIsPlaying(false);
-        }
-      },
-      previoustrack: () => playPrevious(),
-      nexttrack: () => playNext(),
-      seekto: (details) => {
-        if (audioRef.current && details.seekTime !== undefined) {
-          audioRef.current.currentTime = details.seekTime;
-          setCurrentTime(details.seekTime);
-        }
-      },
-    };
-
-    for (const [action, handler] of Object.entries(actionHandlers)) {
-      try {
-        navigator.mediaSession.setActionHandler(action, handler);
-      } catch (error) {
-        console.log(`Media Session action "${action}" not supported`);
-      }
-    }
-
-    return () => {
-      for (const action of Object.keys(actionHandlers)) {
-        try {
-          navigator.mediaSession.setActionHandler(action, null);
-        } catch (error) {}
-      }
-    };
-  }, [currentTrack, tracks]);
-
   // Update volume
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume;
     }
   }, [volume]);
+
+  // Save queue to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('juetzlify-queue', JSON.stringify(queue));
+    } catch (error) {
+      console.error('Failed to save queue to localStorage:', error);
+    }
+  }, [queue]);
 
   // Play tracking: Record play after 15 seconds
   useEffect(() => {
@@ -226,6 +200,53 @@ export const useAudioPlayer = (tracks = []) => {
     }
   };
 
+  // Media Session action handlers (must be after playNext and playPrevious are defined)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+
+    const actionHandlers = {
+      play: () => {
+        if (audioRef.current) {
+          audioRef.current.play();
+          setIsPlaying(true);
+        }
+      },
+      pause: () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          setIsPlaying(false);
+        }
+      },
+      previoustrack: () => playPrevious(),
+      nexttrack: () => playNext(),
+      seekto: (details) => {
+        if (audioRef.current && details.seekTime !== undefined) {
+          audioRef.current.currentTime = details.seekTime;
+          setCurrentTime(details.seekTime);
+        }
+      },
+    };
+
+    for (const [action, handler] of Object.entries(actionHandlers)) {
+      try {
+        navigator.mediaSession.setActionHandler(action, handler);
+      } catch (err) {
+        console.log(`Media Session action "${action}" not supported`, err);
+      }
+    }
+
+    return () => {
+      for (const action of Object.keys(actionHandlers)) {
+        try {
+          navigator.mediaSession.setActionHandler(action, null);
+        } catch {
+          // Ignore cleanup errors
+        }
+      }
+    };
+  }, [currentTrack, tracks, queue, currentTime]);
+
   const handleTimeUpdate = (e) => {
     setCurrentTime(e.target.currentTime);
     // Update Media Session position state
@@ -236,7 +257,9 @@ export const useAudioPlayer = (tracks = []) => {
           playbackRate: e.target.playbackRate || 1,
           position: e.target.currentTime || 0
         });
-      } catch (error) {}
+      } catch {
+        // Ignore errors when setting position state
+      }
     }
   };
 

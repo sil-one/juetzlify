@@ -37,16 +37,27 @@ async function loadAllTracks() {
       })
     );
 
-    // Sort by track number if available, otherwise by filename
+    // Sort by album, then track number, then filename
     tracks.sort((a, b) => {
-      // If both have track numbers, sort by those
-      if (a.trackNo !== null && b.trackNo !== null) {
-        // Explicitly convert to numbers to ensure numeric sorting
-        return Number(a.trackNo) - Number(b.trackNo);
+      // First sort by album
+      const albumA = a.album || '';
+      const albumB = b.album || '';
+      const albumCompare = albumA.localeCompare(albumB);
+      if (albumCompare !== 0) return albumCompare;
+
+      // Within same album, sort by track number
+      if (a.trackNo != null && b.trackNo != null) {
+        const trackA = parseInt(String(a.trackNo), 10);
+        const trackB = parseInt(String(b.trackNo), 10);
+        if (!isNaN(trackA) && !isNaN(trackB)) {
+          return trackA - trackB;
+        }
       }
+
       // If only one has a track number, prioritize it
-      if (a.trackNo !== null) return -1;
-      if (b.trackNo !== null) return 1;
+      if (a.trackNo != null && !isNaN(parseInt(String(a.trackNo), 10))) return -1;
+      if (b.trackNo != null && !isNaN(parseInt(String(b.trackNo), 10))) return 1;
+
       // Otherwise, sort alphabetically by filename
       return a.filename.localeCompare(b.filename);
     });
