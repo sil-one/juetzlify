@@ -41,7 +41,8 @@ async function loadAllTracks() {
     tracks.sort((a, b) => {
       // If both have track numbers, sort by those
       if (a.trackNo !== null && b.trackNo !== null) {
-        return a.trackNo - b.trackNo;
+        // Explicitly convert to numbers to ensure numeric sorting
+        return Number(a.trackNo) - Number(b.trackNo);
       }
       // If only one has a track number, prioritize it
       if (a.trackNo !== null) return -1;

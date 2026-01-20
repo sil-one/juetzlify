@@ -274,7 +274,12 @@ const TrackList = ({ tracks, currentTrack, onTrackSelect, onAddToQueue }) => {
 
     // Sort tracks within each album by track number
     Object.values(groups).forEach((group) => {
-      group.tracks.sort((a, b) => (a.trackNo || 999) - (b.trackNo || 999));
+      group.tracks.sort((a, b) => {
+        // Explicitly convert to numbers to ensure numeric sorting
+        const aTrack = Number(a.trackNo) || 999;
+        const bTrack = Number(b.trackNo) || 999;
+        return aTrack - bTrack;
+      });
     });
 
     // Convert to array and sort albums alphabetically
