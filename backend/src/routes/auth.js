@@ -1,6 +1,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import { config } from '../config/config.js';
+import { generateToken } from '../utils/jwt.js';
 
 const router = express.Router();
 
@@ -25,7 +26,15 @@ router.post('/private', (req, res) => {
   const passwordHash = hashPassword(password);
 
   if (passwordHash === config.privatePasswordHash) {
-    return res.json({ success: true });
+    const token = generateToken('private');
+    const expiresAt = Date.now() + (604800 * 1000); // 1 week in milliseconds
+
+    return res.json({
+      success: true,
+      token,
+      role: 'private',
+      expiresAt
+    });
   }
 
   return res.status(401).json({ error: 'Invalid password' });
@@ -45,7 +54,15 @@ router.post('/admin', (req, res) => {
   const passwordHash = hashPassword(password);
 
   if (passwordHash === config.adminPasswordHash) {
-    return res.json({ success: true });
+    const token = generateToken('admin');
+    const expiresAt = Date.now() + (604800 * 1000); // 1 week in milliseconds
+
+    return res.json({
+      success: true,
+      token,
+      role: 'admin',
+      expiresAt
+    });
   }
 
   return res.status(401).json({ error: 'Invalid password' });

@@ -16,4 +16,5 @@ export const config = {
   dataPath: process.env.DATA_PATH || join(__dirname, '../../data'),
   privatePasswordHash: process.env.PRIVATE_PASSWORD_HASH,
   adminPasswordHash: process.env.ADMIN_PASSWORD_HASH,
+  jwtSecret: process.env.JWT_SECRET || 'default-dev-secret-change-me',
 };

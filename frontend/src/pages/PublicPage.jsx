@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
+import { useScrollPosition } from '../hooks/useScrollPosition';
 import AudioPlayer from '../components/AudioPlayer';
 import TrackList from '../components/TrackList';
 import Queue from '../components/Queue';
+import StickyPlayerBar from '../components/StickyPlayerBar';
 import { API_BASE_URL } from '../utils/constants';
 
 const PublicPage = () => {
@@ -30,6 +32,9 @@ const PublicPage = () => {
     handleLoadedMetadata,
     handleEnded,
   } = useAudioPlayer(tracks);
+
+  // Detect scroll position for sticky player
+  const isScrolledPast = useScrollPosition(400);
 
   useEffect(() => {
     fetchTracks();
@@ -103,11 +108,25 @@ const PublicPage = () => {
         onPlayTrack={playTrack}
         onReorder={reorderQueue}
       />
-      <TrackList
-        tracks={tracks}
+      <div className={isScrolledPast ? 'pb-24' : ''}>
+        <TrackList
+          tracks={tracks}
+          currentTrack={currentTrack}
+          onTrackSelect={playTrack}
+          onAddToQueue={addToQueue}
+        />
+      </div>
+
+      {/* Sticky player bar - shows when scrolled past main player */}
+      <StickyPlayerBar
         currentTrack={currentTrack}
-        onTrackSelect={playTrack}
-        onAddToQueue={addToQueue}
+        isPlaying={isPlaying}
+        currentTime={currentTime}
+        duration={duration}
+        onTogglePlay={togglePlay}
+        onPlayNext={playNext}
+        onPlayPrevious={playPrevious}
+        isVisible={isScrolledPast}
       />
     </div>
   );
