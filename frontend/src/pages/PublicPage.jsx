@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../hooks/useAuth';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { useScrollPosition } from '../hooks/useScrollPosition';
 import AudioPlayer from '../components/AudioPlayer';
@@ -8,6 +9,10 @@ import StickyPlayerBar from '../components/StickyPlayerBar';
 import { API_BASE_URL } from '../utils/constants';
 
 const PublicPage = () => {
+  // Check if user is logged in as admin (no auth required, just checking)
+  const { userRole } = useAuth('admin');
+  const isAdmin = userRole === 'admin';
+
   const [tracks, setTracks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -38,12 +43,14 @@ const PublicPage = () => {
 
   useEffect(() => {
     fetchTracks();
-  }, []);
+  }, [isAdmin]); // Refetch when admin status changes
 
   const fetchTracks = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_BASE_URL}/tracks?type=public`);
+      // If admin, fetch all tracks including disabled ones
+      const trackType = isAdmin ? 'admin' : 'public';
+      const response = await fetch(`${API_BASE_URL}/tracks?type=${trackType}`);
       const data = await response.json();
 
       if (data.success) {
@@ -114,6 +121,7 @@ const PublicPage = () => {
           currentTrack={currentTrack}
           onTrackSelect={playTrack}
           onAddToQueue={addToQueue}
+          isAdmin={isAdmin}
         />
       </div>
 

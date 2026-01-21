@@ -74,10 +74,10 @@ const SortableQueueItem = ({ track, index, onRemove, onPlayTrack }) => {
       </button>
       <button
         onClick={() => onRemove(index)}
-        className="p-2 text-sp-text-muted hover:text-sp-text opacity-0 group-hover:opacity-100 transition-all rounded-full hover:bg-sp-light-gray"
+        className="p-2 text-sp-text-muted hover:text-sp-text opacity-70 md:opacity-0 md:group-hover:opacity-100 transition-all rounded-full hover:bg-sp-light-gray active:scale-90"
         title="Remove from queue"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
