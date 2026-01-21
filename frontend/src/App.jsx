@@ -4,13 +4,17 @@ import Header from './components/Header';
 import PublicPage from './pages/PublicPage';
 import PrivatePage from './pages/PrivatePage';
 import AdminPage from './pages/AdminPage';
+import WrappedPage from './pages/WrappedPage';
+import PrivateWrappedPage from './pages/PrivateWrappedPage';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Admin route without header */}
+        {/* Routes without header */}
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/wrapped" element={<WrappedPage />} />
+        <Route path="/wrapped-intern" element={<PrivateWrappedPage />} />
 
         {/* Regular routes with header */}
         <Route

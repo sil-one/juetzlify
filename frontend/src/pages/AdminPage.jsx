@@ -16,10 +16,12 @@ const AdminPage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null);
+  const [wrappedStatus, setWrappedStatus] = useState({ public: false, private: false });
 
   useEffect(() => {
     if (isAuthenticated) {
       checkAndMigrate();
+      fetchWrappedStatus();
     }
   }, [isAuthenticated]);
 
@@ -105,6 +107,43 @@ const AdminPage = () => {
     } catch (err) {
       console.error('Error updating track visibility:', err);
       alert('Failed to update track visibility');
+    }
+  };
+
+  const fetchWrappedStatus = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/wrapped/status`);
+      const data = await response.json();
+
+      if (data.success) {
+        setWrappedStatus(data.wrappedEnabled);
+      }
+    } catch (err) {
+      console.error('Error fetching wrapped status:', err);
+    }
+  };
+
+  const toggleWrapped = async (type) => {
+    try {
+      const newValue = !wrappedStatus[type];
+      const response = await fetch(`${API_BASE_URL}/admin/wrapped/enable`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ type, enabled: newValue }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setWrappedStatus({ ...wrappedStatus, [type]: newValue });
+      } else {
+        alert(`Failed to toggle wrapped: ${data.error}`);
+      }
+    } catch (err) {
+      console.error('Error toggling wrapped:', err);
+      alert('Failed to toggle wrapped');
     }
   };
 
@@ -248,6 +287,85 @@ const AdminPage = () => {
           <div className="bg-sp-dark p-4 rounded-lg">
             <div className="text-sp-text-secondary text-sm mb-1">Total Plays</div>
             <div className="text-2xl md:text-3xl font-bold text-sp-green">{totalPlays.toLocaleString()}</div>
+          </div>
+        </div>
+
+        {/* Wrapped Pages */}
+        <div className="bg-sp-dark rounded-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold mb-4">Wrapped Pages</h2>
+          <p className="text-sp-text-secondary text-sm mb-6">
+            Enable or disable Wrapped pages for public and private access. Wrapped pages show carnival statistics in a Spotify Wrapped-style presentation.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Public Wrapped */}
+            <div className="bg-sp-gray p-4 rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">Public Wrapped</h3>
+                  <p className="text-sm text-sp-text-secondary">Available at /wrapped</p>
+                </div>
+                <button
+                  onClick={() => toggleWrapped('public')}
+                  className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                    wrappedStatus.public ? 'bg-sp-green' : 'bg-sp-light-gray'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                      wrappedStatus.public ? 'translate-x-7' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              {wrappedStatus.public && (
+                <a
+                  href="/wrapped"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-sp-green hover:text-sp-green/80 transition-colors"
+                >
+                  <span>Open Wrapped Page</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              )}
+            </div>
+
+            {/* Private Wrapped */}
+            <div className="bg-sp-gray p-4 rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">Private Wrapped</h3>
+                  <p className="text-sm text-sp-text-secondary">Available at /wrapped-intern</p>
+                </div>
+                <button
+                  onClick={() => toggleWrapped('private')}
+                  className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                    wrappedStatus.private ? 'bg-blue-400' : 'bg-sp-light-gray'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                      wrappedStatus.private ? 'translate-x-7' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              {wrappedStatus.private && (
+                <a
+                  href="/wrapped-intern"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-400/80 transition-colors"
+                >
+                  <span>Open Private Wrapped</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              )}
+            </div>
           </div>
         </div>
 

@@ -59,6 +59,22 @@ export const useAudioPlayer = (tracks = []) => {
     });
   }, [currentTrack]);
 
+  // Sync Media Session playback state with component state
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+
+    if (isPlaying) {
+      navigator.mediaSession.playbackState = 'playing';
+    } else {
+      navigator.mediaSession.playbackState = 'paused';
+    }
+
+    // Update position state whenever play state changes
+    if (audioRef.current) {
+      updateMediaSessionPosition(audioRef.current);
+    }
+  }, [isPlaying]);
+
   // Update volume
   useEffect(() => {
     if (audioRef.current) {
@@ -124,18 +140,30 @@ export const useAudioPlayer = (tracks = []) => {
 
     if (isPlaying) {
       audioRef.current.pause();
+      // Update Media Session to paused state
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'paused';
+      }
     } else {
       audioRef.current.play().catch(error => {
         console.error('Playback error:', error);
       });
+      // Update Media Session to playing state
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'playing';
+      }
     }
     setIsPlaying(!isPlaying);
+    // Update position state immediately when toggling playback
+    updateMediaSessionPosition(audioRef.current);
   };
 
   const seek = (time) => {
     if (audioRef.current) {
       audioRef.current.currentTime = time;
       setCurrentTime(time);
+      // Immediately update Media Session position state after seeking
+      updateMediaSessionPosition(audioRef.current);
     }
   };
 
@@ -210,12 +238,16 @@ export const useAudioPlayer = (tracks = []) => {
         if (audioRef.current) {
           audioRef.current.play();
           setIsPlaying(true);
+          navigator.mediaSession.playbackState = 'playing';
+          updateMediaSessionPosition(audioRef.current);
         }
       },
       pause: () => {
         if (audioRef.current) {
           audioRef.current.pause();
           setIsPlaying(false);
+          navigator.mediaSession.playbackState = 'paused';
+          updateMediaSessionPosition(audioRef.current);
         }
       },
       previoustrack: () => playPrevious(),
@@ -224,6 +256,7 @@ export const useAudioPlayer = (tracks = []) => {
         if (audioRef.current && details.seekTime !== undefined) {
           audioRef.current.currentTime = details.seekTime;
           setCurrentTime(details.seekTime);
+          updateMediaSessionPosition(audioRef.current);
         }
       },
     };
@@ -247,29 +280,45 @@ export const useAudioPlayer = (tracks = []) => {
     };
   }, [currentTrack, tracks, queue, currentTime]);
 
-  const handleTimeUpdate = (e) => {
-    setCurrentTime(e.target.currentTime);
-    // Update Media Session position state
-    if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
-      try {
-        navigator.mediaSession.setPositionState({
-          duration: e.target.duration || 0,
-          playbackRate: e.target.playbackRate || 1,
-          position: e.target.currentTime || 0
-        });
-      } catch {
-        // Ignore errors when setting position state
+  // Helper function to update Media Session position state
+  const updateMediaSessionPosition = (audioElement) => {
+    if (!audioElement || !('mediaSession' in navigator) || !('setPositionState' in navigator.mediaSession)) {
+      return;
+    }
+
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: audioElement.duration || 0,
+        playbackRate: audioElement.playbackRate || 1,
+        position: audioElement.currentTime || 0
+      });
+    } catch (error) {
+      // Some browsers may throw errors, especially when position is NaN
+      if (error.name !== 'InvalidStateError') {
+        console.warn('Failed to update Media Session position state:', error);
       }
     }
   };
 
+  const handleTimeUpdate = (e) => {
+    setCurrentTime(e.target.currentTime);
+    // Update Media Session position state on every time update
+    updateMediaSessionPosition(e.target);
+  };
+
   const handleLoadedMetadata = (e) => {
     setDuration(e.target.duration);
+    // Update Media Session position state when metadata is loaded
+    updateMediaSessionPosition(e.target);
   };
 
   const handleEnded = () => {
     setIsPlaying(false);
     setCurrentTime(0);
+    // Update Media Session to paused state
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = 'paused';
+    }
     // Auto-play next track
     playNext();
   };

@@ -246,6 +246,7 @@ export async function getCarnivalStatistics(includePrivate = false) {
     // Store metadata from first occurrence
     if (!trackMetadata[play.filename]) {
       trackMetadata[play.filename] = {
+        trackId: play.trackId,
         title: play.title,
         artist: play.artist,
         album: play.album,
@@ -255,6 +256,7 @@ export async function getCarnivalStatistics(includePrivate = false) {
 
   const topTracks = Object.entries(trackCounts)
     .map(([filename, count]) => ({
+      trackId: trackMetadata[filename].trackId,
       filename,
       title: trackMetadata[filename].title,
       artist: trackMetadata[filename].artist,
@@ -286,6 +288,7 @@ export async function getCarnivalStatistics(includePrivate = false) {
   const lastPlay = carnivalPlays[carnivalPlays.length - 1];
 
   const firstTrack = firstPlay ? {
+    trackId: firstPlay.trackId,
     filename: firstPlay.filename,
     title: firstPlay.title,
     artist: firstPlay.artist,
@@ -293,11 +296,42 @@ export async function getCarnivalStatistics(includePrivate = false) {
   } : null;
 
   const lastTrack = lastPlay ? {
+    trackId: lastPlay.trackId,
     filename: lastPlay.filename,
     title: lastPlay.title,
     artist: lastPlay.artist,
     album: lastPlay.album,
   } : null;
+
+  // Calculate time of day statistics
+  const timeOfDayCategories = {
+    morning: 0,    // 8:00 - 13:00
+    afternoon: 0,  // 13:00 - 18:00
+    evening: 0,    // 18:00 - 00:00
+    night: 0,      // 00:00 - 8:00
+  };
+
+  carnivalPlays.forEach((play) => {
+    const hour = new Date(play.timestamp).getHours();
+
+    if (hour >= 8 && hour < 13) {
+      timeOfDayCategories.morning++;
+    } else if (hour >= 13 && hour < 18) {
+      timeOfDayCategories.afternoon++;
+    } else if (hour >= 18 && hour < 24) {
+      timeOfDayCategories.evening++;
+    } else {
+      timeOfDayCategories.night++;
+    }
+  });
+
+  // Find most active time period
+  const timeOfDayEntries = Object.entries(timeOfDayCategories).map(([period, plays]) => ({
+    period,
+    plays,
+  })).sort((a, b) => b.plays - a.plays);
+
+  const mostActiveTimeOfDay = timeOfDayEntries[0];
 
   return {
     totalPlays,
@@ -307,6 +341,8 @@ export async function getCarnivalStatistics(includePrivate = false) {
     biggestDay,
     firstTrack,
     lastTrack,
+    timeOfDayStats: timeOfDayEntries,
+    mostActiveTimeOfDay,
   };
 }
 

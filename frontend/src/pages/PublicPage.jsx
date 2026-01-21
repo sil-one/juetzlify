@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { useScrollPosition } from '../hooks/useScrollPosition';
@@ -16,6 +17,7 @@ const PublicPage = () => {
   const [tracks, setTracks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [wrappedEnabled, setWrappedEnabled] = useState(false);
 
   const {
     audioRef,
@@ -43,7 +45,20 @@ const PublicPage = () => {
 
   useEffect(() => {
     fetchTracks();
+    checkWrappedStatus();
   }, [isAdmin]); // Refetch when admin status changes
+
+  const checkWrappedStatus = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/wrapped/status`);
+      const data = await response.json();
+      if (data.success) {
+        setWrappedEnabled(data.wrappedEnabled.public);
+      }
+    } catch (err) {
+      console.error('Error checking wrapped status:', err);
+    }
+  };
 
   const fetchTracks = async () => {
     try {
@@ -124,6 +139,25 @@ const PublicPage = () => {
           isAdmin={isAdmin}
         />
       </div>
+
+      {/* Wrapped Button */}
+      {wrappedEnabled && (
+        <Link
+          to="/wrapped"
+          className="fixed bottom-24 right-6 z-50 group"
+          style={{
+            animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }}
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-sp-green rounded-full blur-xl opacity-75 group-hover:opacity-100 transition-opacity" />
+            <div className="relative px-6 py-3 bg-gradient-to-r from-sp-green to-[#27ae60] text-sp-black font-bold rounded-full shadow-2xl hover:shadow-sp-green/50 transition-all flex items-center gap-2 hover:scale-105">
+              <span className="text-2xl">🎭</span>
+              <span>Jützlify Wrapped</span>
+            </div>
+          </div>
+        </Link>
+      )}
 
       {/* Sticky player bar - shows when scrolled past main player */}
       <StickyPlayerBar
