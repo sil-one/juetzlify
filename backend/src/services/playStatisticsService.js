@@ -3,8 +3,11 @@ import path from 'path';
 import { config } from '../config/config.js';
 
 const STATISTICS_FILE = path.join(config.dataPath, 'play-statistics.json');
+const STATISTICS_TMP = STATISTICS_FILE + '.tmp';
 
 let statisticsCache = null;
+let pendingPlays = [];
+let batchWriterInterval = null;
 
 /**
  * Carnival 2026 date configuration
@@ -65,21 +68,37 @@ async function loadStatistics() {
 }
 
 /**
- * Save statistics to file
+ * Atomic write to file (write to .tmp, then rename)
  */
-async function saveStatistics(statistics) {
+async function atomicWriteStatistics(statistics) {
   try {
     await ensureDataDir();
+    // Write to temporary file first
     await fs.writeFile(
-      STATISTICS_FILE,
+      STATISTICS_TMP,
       JSON.stringify(statistics, null, 2),
       'utf-8'
     );
-    statisticsCache = null; // Clear cache
+    // Atomic rename
+    await fs.rename(STATISTICS_TMP, STATISTICS_FILE);
+    statisticsCache = null; // Clear cache after write
   } catch (error) {
     console.error('Error saving play statistics:', error.message);
+    // Clean up temp file if it exists
+    try {
+      await fs.unlink(STATISTICS_TMP);
+    } catch (e) {
+      // Ignore
+    }
     throw error;
   }
+}
+
+/**
+ * Save statistics to file
+ */
+async function saveStatistics(statistics) {
+  return atomicWriteStatistics(statistics);
 }
 
 /**
@@ -95,11 +114,10 @@ async function getStatistics() {
 }
 
 /**
- * Record a play after 15 seconds
+ * Record a play after 15 seconds (adds to queue for batch writing)
  */
 export async function recordPlay(trackId, filename, visibility, title, artist, album) {
   try {
-    const statistics = await getStatistics();
     const now = new Date();
     const play = {
       trackId,
@@ -112,11 +130,15 @@ export async function recordPlay(trackId, filename, visibility, title, artist, a
       visibility,
     };
 
-    statistics.plays.push(play);
-    await saveStatistics(statistics);
+    // Add to pending queue (non-blocking)
+    pendingPlays.push(play);
 
-    console.log(`Play recorded: ${title || filename} by ${artist || 'Unknown Artist'} (${visibility})`);
-    return { success: true, totalPlays: statistics.plays.length };
+    // Get current total for response (from cache + pending)
+    const statistics = await getStatistics();
+    const totalPlays = statistics.plays.length + pendingPlays.length;
+
+    console.log(`Play queued: ${title || filename} by ${artist || 'Unknown Artist'} (${visibility})`);
+    return { success: true, totalPlays };
   } catch (error) {
     console.error('Error recording play:', error.message);
     throw error;
@@ -324,4 +346,80 @@ export async function isWrappedEnabled(type) {
  */
 export function clearStatisticsCache() {
   statisticsCache = null;
+}
+
+/**
+ * Flush pending plays to disk (batch write)
+ */
+async function flushPendingPlays() {
+  if (pendingPlays.length === 0) {
+    return; // Nothing to write
+  }
+
+  try {
+    const statistics = await getStatistics();
+    const playsToWrite = [...pendingPlays]; // Copy for atomic operation
+    statistics.plays.push(...playsToWrite);
+
+    await atomicWriteStatistics(statistics);
+
+    // Clear pending queue only after successful write
+    pendingPlays = [];
+
+    if (playsToWrite.length > 0) {
+      console.log(`✓ Batch written ${playsToWrite.length} play records to disk`);
+    }
+  } catch (error) {
+    console.error('Error flushing pending plays:', error.message);
+    // Don't clear pending plays on error - they'll be retried next interval
+  }
+}
+
+/**
+ * Initialize batch writer (should be called once on server startup)
+ */
+export function initializeBatchWriter(intervalMs = 5000) {
+  if (batchWriterInterval) {
+    console.warn('Batch writer already initialized');
+    return;
+  }
+
+  console.log(`Starting batch writer (interval: ${intervalMs}ms)`);
+  batchWriterInterval = setInterval(flushPendingPlays, intervalMs);
+
+  // Ensure pending plays are flushed on process exit
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, flushing pending plays...');
+    flushPendingPlays().then(() => {
+      console.log('Pending plays flushed');
+      process.exit(0);
+    }).catch((error) => {
+      console.error('Error flushing on SIGTERM:', error);
+      process.exit(1);
+    });
+  });
+
+  process.on('SIGINT', () => {
+    console.log('SIGINT received, flushing pending plays...');
+    flushPendingPlays().then(() => {
+      console.log('Pending plays flushed');
+      process.exit(0);
+    }).catch((error) => {
+      console.error('Error flushing on SIGINT:', error);
+      process.exit(1);
+    });
+  });
+}
+
+/**
+ * Stop batch writer (for testing/graceful shutdown)
+ */
+export async function stopBatchWriter() {
+  if (batchWriterInterval) {
+    clearInterval(batchWriterInterval);
+    batchWriterInterval = null;
+  }
+  // Final flush
+  await flushPendingPlays();
+  console.log('Batch writer stopped');
 }

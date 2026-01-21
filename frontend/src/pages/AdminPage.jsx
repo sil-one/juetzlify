@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import PasswordPrompt from '../components/PasswordPrompt';
+import VisibilitySlider from '../components/VisibilitySlider';
 import { API_BASE_URL } from '../utils/constants';
 
 const AdminPage = () => {
@@ -231,22 +232,22 @@ const AdminPage = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-sp-dark p-4 rounded-lg">
             <div className="text-sp-text-secondary text-sm mb-1">Public</div>
-            <div className="text-3xl font-bold text-sp-green">{visibilityStats.public}</div>
+            <div className="text-2xl md:text-3xl font-bold text-sp-green">{visibilityStats.public}</div>
           </div>
           <div className="bg-sp-dark p-4 rounded-lg">
             <div className="text-sp-text-secondary text-sm mb-1">Private</div>
-            <div className="text-3xl font-bold text-blue-400">{visibilityStats.private}</div>
+            <div className="text-2xl md:text-3xl font-bold text-blue-400">{visibilityStats.private}</div>
           </div>
           <div className="bg-sp-dark p-4 rounded-lg">
             <div className="text-sp-text-secondary text-sm mb-1">Disabled</div>
-            <div className="text-3xl font-bold text-sp-text-muted">{visibilityStats.disabled}</div>
+            <div className="text-2xl md:text-3xl font-bold text-sp-text-muted">{visibilityStats.disabled}</div>
           </div>
           <div className="bg-sp-dark p-4 rounded-lg">
             <div className="text-sp-text-secondary text-sm mb-1">Total Plays</div>
-            <div className="text-3xl font-bold text-sp-green">{totalPlays.toLocaleString()}</div>
+            <div className="text-2xl md:text-3xl font-bold text-sp-green">{totalPlays.toLocaleString()}</div>
           </div>
         </div>
 
@@ -311,12 +312,12 @@ const AdminPage = () => {
 
         {/* Track List */}
         <div className="bg-sp-dark rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <h2 className="text-2xl font-bold">Tracks ({tracks.length})</h2>
             <button
               onClick={fetchTracks}
               disabled={isLoading}
-              className="px-4 py-2 bg-sp-gray hover:bg-sp-light-gray rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-2 bg-sp-gray hover:bg-sp-light-gray rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full sm:w-auto"
               title="Refresh play counts"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -326,53 +327,60 @@ const AdminPage = () => {
             </button>
           </div>
 
-          <div className="space-y-2">
+          {/* Slider Legend */}
+          <div className="mb-4 flex items-center gap-4 text-xs text-sp-text-secondary">
+            <span className="font-medium">Visibility:</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-sp-text-muted" />
+              <span>Disabled</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-blue-400" />
+              <span>Private</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-sp-green" />
+              <span>Public</span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
             {tracks.map((track) => (
               <div
                 key={track.id}
                 className="bg-sp-gray p-4 rounded-lg hover:bg-sp-light-gray transition-colors"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="font-semibold text-sp-text">{track.title || track.filename}</div>
-                    <div className="text-sm text-sp-text-secondary">
+                {/* Mobile layout (stacked) and Desktop layout */}
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  {/* Track Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sp-text truncate">{track.title || track.filename}</div>
+                    <div className="text-sm text-sp-text-secondary truncate">
                       {track.artist || 'Unknown Artist'}
                       {track.album && ` • ${track.album}`}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  {/* Controls Container - Responsive */}
+                  <div className="flex flex-col sm:flex-row lg:flex-row sm:items-center lg:items-center gap-3 w-full lg:w-auto">
                     {/* Play count badge */}
-                    <div className="flex items-center gap-1 text-sp-text-secondary">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-sp-black rounded-lg">
+                      <svg className="w-4 h-4 text-sp-text-secondary flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                         <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                       </svg>
-                      <span className="font-medium">
+                      <span className="text-sp-text-secondary font-medium">
                         {playCounts[track.filename] || 0}
                       </span>
                     </div>
-                    <select
-                      value={track.visibility}
-                      onChange={(e) => updateTrackVisibility(track.filename, e.target.value)}
-                      className="bg-sp-black text-sp-text px-4 py-2 rounded-lg border border-sp-light-gray focus:outline-none focus:border-sp-green"
-                    >
-                      <option value="public">Public</option>
-                      <option value="private">Private</option>
-                      <option value="disabled">Disabled</option>
-                    </select>
 
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        track.visibility === 'public'
-                          ? 'bg-sp-green/20 text-sp-green'
-                          : track.visibility === 'private'
-                          ? 'bg-blue-500/20 text-blue-400'
-                          : 'bg-sp-text-muted/20 text-sp-text-muted'
-                      }`}
-                    >
-                      {track.visibility}
-                    </span>
+                    {/* Visibility Slider */}
+                    <div className="flex-1 lg:w-48">
+                      <VisibilitySlider
+                        value={track.visibility}
+                        onChange={(visibility) => updateTrackVisibility(track.filename, visibility)}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

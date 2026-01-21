@@ -8,6 +8,7 @@ import streamRouter from './routes/stream.js';
 import authRouter from './routes/auth.js';
 import adminRouter from './routes/admin.js';
 import { getAllTracks } from './services/trackService.js';
+import { initializeBatchWriter } from './services/playStatisticsService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,6 +60,9 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`Environment: ${config.nodeEnv}`);
   console.log(`Tracks path: ${config.tracksPath}`);
   console.log(`Cache path: ${config.cachePath}\n`);
+
+  // Initialize batch writer for statistics
+  initializeBatchWriter();
 
   // Preload tracks on startup
   console.log('Loading tracks...');
