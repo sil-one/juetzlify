@@ -1,5 +1,6 @@
 import React from 'react';
 import useColorExtractor from '../hooks/useColorExtractor';
+import MarqueeText from './MarqueeText';
 
 const StickyPlayerBar = ({
   currentTrack,
@@ -76,15 +77,16 @@ const StickyPlayerBar = ({
 
         {/* Track Info */}
         <div className="flex-1 min-w-0">
-          <div
-            className="font-semibold text-sm truncate"
-            style={{ color: accentColor }}
-          >
-            {currentTrack.title}
+          <div style={{ color: accentColor }}>
+            <MarqueeText
+              text={currentTrack.title}
+              className="font-semibold text-sm"
+            />
           </div>
-          <div className="text-xs text-sp-text-secondary truncate">
-            {currentTrack.artist}
-          </div>
+          <MarqueeText
+            text={currentTrack.artist}
+            className="text-xs text-sp-text-secondary"
+          />
         </div>
 
         {/* Controls */}
