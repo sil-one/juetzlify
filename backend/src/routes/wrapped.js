@@ -1,5 +1,6 @@
 import express from 'express';
-import { getCarnivalStatistics, isWrappedEnabled } from '../services/playStatisticsService.js';
+import { getCarnivalStatistics } from '../services/playStatisticsService.js';
+import { isWrappedEnabled } from '../services/settingsService.js';
 import { verifyToken } from '../utils/jwt.js';
 
 const router = express.Router();

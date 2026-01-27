@@ -199,6 +199,16 @@
       "timestamp": "2026-02-17T19:15:42.000Z",
       "date": "2026-02-17",
       "visibility": "public"
+    },
+    {
+      "trackId": "track-9-Ragazza--se-tu-vuoi-ballare-mp3",
+      "filename": "Ragazza, se tu vuoi ballare.mp3",
+      "title": "Ragazza, se tu vuoi ballare",
+      "artist": "Jützlitypen",
+      "album": "Fasnacht 26",
+      "timestamp": "2026-01-21T16:03:28.045Z",
+      "date": "2026-01-21",
+      "visibility": "public"
     }
   ],
   "carnival2026": {
@@ -213,9 +223,5 @@
       "2026-02-16": "Gidelmäntig",
       "2026-02-17": "Üstrummlä-Zischtig"
     }
-  },
-  "wrappedEnabled": {
-    "public": true,
-    "private": true
   }
 }

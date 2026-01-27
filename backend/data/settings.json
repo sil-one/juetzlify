@@ -1,0 +1,10 @@
+{
+  "wrappedEnabled": {
+    "public": false,
+    "private": false
+  },
+  "podcastAdsEnabled": {
+    "public": true,
+    "private": true
+  }
+}

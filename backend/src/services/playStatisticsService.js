@@ -50,10 +50,6 @@ async function loadStatistics() {
       const initialData = {
         plays: [],
         carnival2026: CARNIVAL_2026,
-        wrappedEnabled: {
-          public: false,
-          private: false,
-        },
       };
       await saveStatistics(initialData);
       return initialData;
@@ -62,7 +58,6 @@ async function loadStatistics() {
     return {
       plays: [],
       carnival2026: CARNIVAL_2026,
-      wrappedEnabled: { public: false, private: false },
     };
   }
 }
@@ -346,36 +341,6 @@ export async function getCarnivalStatistics(includePrivate = false) {
   };
 }
 
-/**
- * Get wrapped page enabled status
- */
-export async function getWrappedStatus() {
-  const statistics = await getStatistics();
-  return statistics.wrappedEnabled;
-}
-
-/**
- * Set wrapped page enabled status
- */
-export async function setWrappedEnabled(type, enabled) {
-  if (type !== 'public' && type !== 'private') {
-    throw new Error('Invalid wrapped type. Must be "public" or "private"');
-  }
-
-  const statistics = await getStatistics();
-  statistics.wrappedEnabled[type] = enabled;
-  await saveStatistics(statistics);
-
-  return { success: true, type, enabled };
-}
-
-/**
- * Check if wrapped page is enabled
- */
-export async function isWrappedEnabled(type) {
-  const statistics = await getStatistics();
-  return statistics.wrappedEnabled[type] === true;
-}
 
 /**
  * Clear statistics cache

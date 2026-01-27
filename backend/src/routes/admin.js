@@ -13,9 +13,13 @@ import {
   getAllTrackPlayCounts,
   getOverallStatistics,
   getCarnivalStatistics,
+} from '../services/playStatisticsService.js';
+import {
   getWrappedStatus,
   setWrappedEnabled,
-} from '../services/playStatisticsService.js';
+  getPodcastAdsStatus,
+  setPodcastAdsEnabled,
+} from '../services/settingsService.js';
 import { config } from '../config/config.js';
 
 const router = express.Router();
@@ -299,6 +303,66 @@ router.post('/wrapped/enable', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to set wrapped status',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/admin/podcast-ads/status
+ * Get podcast ads enabled status
+ */
+router.get('/podcast-ads/status', async (req, res) => {
+  try {
+    const status = await getPodcastAdsStatus();
+
+    res.json({
+      success: true,
+      podcastAdsEnabled: status,
+    });
+  } catch (error) {
+    console.error('Error fetching podcast ads status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch podcast ads status',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/podcast-ads/enable
+ * Enable/disable podcast ads
+ */
+router.post('/podcast-ads/enable', async (req, res) => {
+  try {
+    const { type, enabled } = req.body;
+
+    if (!type || (type !== 'public' && type !== 'private')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid type. Must be "public" or "private"',
+      });
+    }
+
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid enabled value. Must be boolean',
+      });
+    }
+
+    const result = await setPodcastAdsEnabled(type, enabled);
+
+    res.json({
+      success: true,
+      message: `Podcast ads ${type} page ${enabled ? 'enabled' : 'disabled'}`,
+      ...result,
+    });
+  } catch (error) {
+    console.error('Error setting podcast ads status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to set podcast ads status',
       message: error.message,
     });
   }

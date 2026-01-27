@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { useScrollPosition } from '../hooks/useScrollPosition';
+import { useAdOverlay } from '../hooks/useAdOverlay';
 import AudioPlayer from '../components/AudioPlayer';
 import TrackList from '../components/TrackList';
 import Queue from '../components/Queue';
 import StickyPlayerBar from '../components/StickyPlayerBar';
+import AdOverlay from '../components/AdOverlay';
 import { API_BASE_URL } from '../utils/constants';
 
 const PublicPage = () => {
@@ -42,6 +44,9 @@ const PublicPage = () => {
 
   // Detect scroll position for sticky player
   const isScrolledPast = useScrollPosition(400);
+
+  // Ad overlay management
+  const { shouldShowAd, selectedAd, dismissAd } = useAdOverlay('public');
 
   useEffect(() => {
     fetchTracks();
@@ -170,6 +175,9 @@ const PublicPage = () => {
         onPlayPrevious={playPrevious}
         isVisible={isScrolledPast}
       />
+
+      {/* Podcast ad overlay */}
+      {shouldShowAd && <AdOverlay ad={selectedAd} onDismiss={dismissAd} />}
     </div>
   );
 };

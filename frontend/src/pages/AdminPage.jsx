@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import PasswordPrompt from '../components/PasswordPrompt';
 import VisibilitySlider from '../components/VisibilitySlider';
+import { PODCAST_ADS } from '../utils/podcastAds';
 import { API_BASE_URL } from '../utils/constants';
 
 const AdminPage = () => {
@@ -17,11 +18,13 @@ const AdminPage = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null);
   const [wrappedStatus, setWrappedStatus] = useState({ public: false, private: false });
+  const [podcastAdsStatus, setPodcastAdsStatus] = useState({ public: true, private: true });
 
   useEffect(() => {
     if (isAuthenticated) {
       checkAndMigrate();
       fetchWrappedStatus();
+      fetchPodcastAdsStatus();
     }
   }, [isAuthenticated]);
 
@@ -144,6 +147,43 @@ const AdminPage = () => {
     } catch (err) {
       console.error('Error toggling wrapped:', err);
       alert('Failed to toggle wrapped');
+    }
+  };
+
+  const fetchPodcastAdsStatus = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/podcast-ads/status`);
+      const data = await response.json();
+
+      if (data.success) {
+        setPodcastAdsStatus(data.podcastAdsEnabled);
+      }
+    } catch (err) {
+      console.error('Error fetching podcast ads status:', err);
+    }
+  };
+
+  const togglePodcastAds = async (type) => {
+    try {
+      const newValue = !podcastAdsStatus[type];
+      const response = await fetch(`${API_BASE_URL}/admin/podcast-ads/enable`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ type, enabled: newValue }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setPodcastAdsStatus({ ...podcastAdsStatus, [type]: newValue });
+      } else {
+        alert(`Failed to toggle podcast ads: ${data.error}`);
+      }
+    } catch (err) {
+      console.error('Error toggling podcast ads:', err);
+      alert('Failed to toggle podcast ads');
     }
   };
 
@@ -365,6 +405,79 @@ const AdminPage = () => {
                   </svg>
                 </a>
               )}
+            </div>
+          </div>
+        </div>
+
+        {/* Podcast Ads */}
+        <div className="bg-sp-dark rounded-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold mb-4">Podcast Ad Overlays</h2>
+          <p className="text-sp-text-secondary text-sm mb-6">
+            Enable or disable podcast ad overlays for public and private pages. When enabled, ads display randomly on page load with a 1-hour cooldown between shows.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {/* Public Podcast Ads */}
+            <div className="bg-sp-gray p-4 rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">Public Ads</h3>
+                  <p className="text-sm text-sp-text-secondary">Shown on public page</p>
+                </div>
+                <button
+                  onClick={() => togglePodcastAds('public')}
+                  className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                    podcastAdsStatus.public ? 'bg-sp-green' : 'bg-sp-light-gray'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                      podcastAdsStatus.public ? 'translate-x-7' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Private Podcast Ads */}
+            <div className="bg-sp-gray p-4 rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">Private Ads</h3>
+                  <p className="text-sm text-sp-text-secondary">Shown on private page</p>
+                </div>
+                <button
+                  onClick={() => togglePodcastAds('private')}
+                  className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                    podcastAdsStatus.private ? 'bg-blue-400' : 'bg-sp-light-gray'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                      podcastAdsStatus.private ? 'translate-x-7' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Podcast Preview Gallery */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Available Podcasts</h3>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-9 gap-3">
+              {PODCAST_ADS.map((podcast) => (
+                <div
+                  key={podcast.filename}
+                  className="aspect-square rounded-lg overflow-hidden shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+                  title={podcast.alt}
+                >
+                  <img
+                    src={`/podcasts/${podcast.filename}`}
+                    alt={podcast.alt}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </div>
