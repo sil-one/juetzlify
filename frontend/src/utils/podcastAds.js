@@ -11,6 +11,7 @@ export const PODCAST_ADS = [
   { filename: 'piggy.jpg', alt: 'Piggy Podcast' },
   { filename: 'posci.png', alt: 'Posci Podcast' },
   { filename: 'simi.jpg', alt: 'Simi Podcast' },
+  { filename: 'thisi.jpg', alt: 'Thisi Podcast' },
   { filename: 'weie.jpg', alt: 'Weie Podcast' },
   { filename: 'willy.jpg', alt: 'Willy Podcast' },
 ];
