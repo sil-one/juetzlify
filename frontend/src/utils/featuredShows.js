@@ -1,9 +1,9 @@
 /**
- * Podcast advertisement data
- * Each podcast has a filename (served from public/podcasts/) and an alt text
+ * Featured shows data
+ * Each show has a filename (served from public/featured-shows/) and an alt text
  */
 
-export const PODCAST_ADS = [
+export const FEATURED_SHOWS = [
   { filename: 'blutt.jpg', alt: 'Blutt Podcast' },
   { filename: 'herr-merz.jpg', alt: 'Herr Merz Podcast' },
   { filename: 'meier.jpg', alt: 'Meier Podcast' },

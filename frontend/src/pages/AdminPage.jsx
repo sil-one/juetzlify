@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import PasswordPrompt from '../components/PasswordPrompt';
 import VisibilitySlider from '../components/VisibilitySlider';
-import { PODCAST_ADS } from '../utils/podcastAds';
+import { FEATURED_SHOWS } from '../utils/featuredShows';
 import { API_BASE_URL } from '../utils/constants';
 
 const AdminPage = () => {
@@ -409,18 +409,18 @@ const AdminPage = () => {
           </div>
         </div>
 
-        {/* Podcast Ads */}
+        {/* Featured Shows Overlays */}
         <div className="bg-sp-dark rounded-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold mb-4">Podcast Ad Overlays</h2>
+          <h2 className="text-2xl font-bold mb-4">Featured Show Overlays</h2>
           <p className="text-sp-text-secondary text-sm mb-6">
-            Enable or disable podcast ad overlays for public and private pages. When enabled, ads display randomly on page load with a 1-hour cooldown between shows.
+            Enable or disable featured show overlays for public and private pages. When enabled, shows display randomly on page load with a 1-hour cooldown between displays.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {/* Public Podcast Ads */}
+            {/* Public Featured Shows */}
             <div className="bg-sp-gray p-4 rounded-lg">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h3 className="text-lg font-semibold mb-1">Public Ads</h3>
+                  <h3 className="text-lg font-semibold mb-1">Public Shows</h3>
                   <p className="text-sm text-sp-text-secondary">Shown on public page</p>
                 </div>
                 <button
@@ -438,11 +438,11 @@ const AdminPage = () => {
               </div>
             </div>
 
-            {/* Private Podcast Ads */}
+            {/* Private Featured Shows */}
             <div className="bg-sp-gray p-4 rounded-lg">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h3 className="text-lg font-semibold mb-1">Private Ads</h3>
+                  <h3 className="text-lg font-semibold mb-1">Private Shows</h3>
                   <p className="text-sm text-sp-text-secondary">Shown on private page</p>
                 </div>
                 <button
@@ -461,19 +461,19 @@ const AdminPage = () => {
             </div>
           </div>
 
-          {/* Podcast Preview Gallery */}
+          {/* Featured Shows Gallery */}
           <div>
-            <h3 className="text-lg font-semibold mb-3">Available Podcasts</h3>
+            <h3 className="text-lg font-semibold mb-3">Available Shows</h3>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-9 gap-3">
-              {PODCAST_ADS.map((podcast) => (
+              {FEATURED_SHOWS.map((show) => (
                 <div
-                  key={podcast.filename}
+                  key={show.filename}
                   className="aspect-square rounded-lg overflow-hidden shadow-lg hover:shadow-xl hover:scale-105 transition-all"
-                  title={podcast.alt}
+                  title={show.alt}
                 >
                   <img
-                    src={`/podcasts/${podcast.filename}`}
-                    alt={podcast.alt}
+                    src={`/featured-shows/${show.filename}`}
+                    alt={show.alt}
                     className="w-full h-full object-cover"
                   />
                 </div>
