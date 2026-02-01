@@ -146,7 +146,7 @@ const TrackItem = ({ track, isCurrentTrack, displayNumber, onTrackSelect, onAddT
           transition: isSwiping ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s',
         }}
       >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 md:gap-4">
         {/* Track number or playing indicator */}
         <div className="w-6 text-right flex-shrink-0">
           {isCurrentTrack ? (
@@ -195,9 +195,9 @@ const TrackItem = ({ track, isCurrentTrack, displayNumber, onTrackSelect, onAddT
               />
             </div>
           ) : (
-            <div className="w-10 h-10 bg-sp-gray rounded flex items-center justify-center shadow-md">
+            <div className="w-9 h-9 md:w-10 md:h-10 bg-sp-gray rounded flex items-center justify-center shadow-md">
               <svg
-                className="w-5 h-5 text-sp-text-muted"
+                className="w-4 h-4 md:w-5 md:h-5 text-sp-text-muted"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -210,23 +210,23 @@ const TrackItem = ({ track, isCurrentTrack, displayNumber, onTrackSelect, onAddT
         {/* Track info */}
         <div className="flex-1 min-w-0">
           <p
-            className="font-medium truncate transition-colors duration-300"
+            className="text-sm md:text-base font-medium truncate transition-colors duration-300"
             style={{ color: isCurrentTrack ? accentColor : undefined }}
           >
             {track.title}
           </p>
-          <p className="text-sm truncate text-sp-text-secondary">
+          <p className="text-xs md:text-sm truncate text-sp-text-secondary">
             {track.artist}
           </p>
         </div>
 
         {/* Download button and duration */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <DownloadButton
             trackId={track.id}
             track={track}
             size="small"
-            className="opacity-0 group-hover:opacity-100 md:opacity-100 transition-opacity"
+            className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
           />
           {track.duration > 0 && (
             <span className="text-sm text-sp-text-muted tabular-nums">
@@ -379,7 +379,7 @@ const AlbumGroup = ({ group, currentTrack, onTrackSelect, onAddToQueue, isAdmin 
 
   return (
     <div
-      className="glass rounded-xl p-4 transition-all duration-300 hover:elevation-1"
+      className="glass rounded-xl px-3 py-4 md:px-4 transition-all duration-300 hover:elevation-1"
       style={{
         background: `linear-gradient(135deg, ${glowRgba} 0%, rgba(24, 24, 24, 0.7) 100%)`,
       }}
@@ -394,15 +394,15 @@ const AlbumGroup = ({ group, currentTrack, onTrackSelect, onAddToQueue, isAdmin 
         >
           {group.albumArt && (
             <div
-              className="relative rounded-md shadow-lg transition-all duration-300"
+              className="relative rounded-lg shadow-lg transition-all duration-300"
               style={{
-                boxShadow: `0 4px 20px ${glowRgba}`,
+                boxShadow: `0 8px 32px ${glowRgba}, 0 0 0 2px ${glowColor?.vibrantRgba(0.4) || 'rgba(46, 204, 113, 0.4)'}`,
               }}
             >
               <img
                 src={group.albumArt}
                 alt={group.name}
-                className="w-12 h-12 rounded-md object-cover"
+                className="w-16 h-16 md:w-20 md:h-20 rounded-lg object-cover"
               />
             </div>
           )}
@@ -420,8 +420,8 @@ const AlbumGroup = ({ group, currentTrack, onTrackSelect, onAddToQueue, isAdmin 
         </div>
       ) : (
         <div className="flex items-center gap-3 mb-3 pb-3 border-b border-sp-gray">
-          <div className="w-12 h-12 rounded-md bg-sp-gray flex items-center justify-center">
-            <svg className="w-6 h-6 text-sp-text-muted" fill="currentColor" viewBox="0 0 20 20">
+          <div className="w-16 h-16 md:w-20 md:h-20 rounded-lg bg-sp-gray flex items-center justify-center shadow-lg">
+            <svg className="w-8 h-8 md:w-10 md:h-10 text-sp-text-muted" fill="currentColor" viewBox="0 0 20 20">
               <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
             </svg>
           </div>
