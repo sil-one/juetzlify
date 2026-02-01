@@ -143,8 +143,12 @@ docker-compose logs -f juetzlify
 ├── tracks/
 │   └── all/              # Put all MP3 files here
 ├── cache/                # Auto-generated album art cache
-└── data/                 # Track visibility metadata
+├── data/                 # Track visibility metadata
+└── logs/                 # PM2 logs (auto-generated)
 ```
+
+**PM2 Clustering:**
+The application runs with PM2 in cluster mode with 4 worker processes, utilizing all available CPU cores for better performance and handling ~200-400 concurrent users.
 
 ## Track Management
 
@@ -245,6 +249,22 @@ docker-compose logs --tail=100
 
 # View only juetzlify service logs
 docker-compose logs -f juetzlify
+```
+
+### Check PM2 Cluster Status
+
+```bash
+# View PM2 process list (should show 4 instances)
+docker exec juetzlify pm2 list
+
+# View detailed PM2 info
+docker exec juetzlify pm2 info juetzlify
+
+# View PM2 logs
+docker exec juetzlify pm2 logs --lines 50
+
+# Monitor PM2 in real-time
+docker exec -it juetzlify pm2 monit
 ```
 
 ### Clear Album Art Cache

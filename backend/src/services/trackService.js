@@ -1,4 +1,5 @@
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
 import { extractMetadata } from './metadataService.js';
 import { config } from '../config/config.js';
@@ -8,6 +9,38 @@ const ALL_TRACKS_DIR = path.join(config.tracksPath, 'all');
 
 // In-memory cache for tracks
 let tracksCache = null;
+
+// File watcher for track visibility changes
+let watcher = null;
+
+/**
+ * Initialize file watcher for track-visibility.json
+ * Automatically refreshes cache when visibility changes
+ */
+function initializeWatcher() {
+  if (watcher) return; // Already watching
+
+  const trackVisibilityPath = path.join(config.dataPath, 'track-visibility.json');
+
+  try {
+    // Check if file exists before watching
+    if (!fsSync.existsSync(trackVisibilityPath)) {
+      console.log('track-visibility.json not found, watcher will start when file is created');
+      return;
+    }
+
+    watcher = fsSync.watch(trackVisibilityPath, (eventType) => {
+      if (eventType === 'change') {
+        console.log('Track visibility changed, refreshing cache across all workers...');
+        refreshCache();
+      }
+    });
+
+    console.log('✓ File watcher initialized for track-visibility.json');
+  } catch (error) {
+    console.warn('⚠ Could not initialize file watcher:', error.message);
+  }
+}
 
 /**
  * Get all tracks from the all/ directory with visibility info
@@ -90,6 +123,9 @@ export async function getAllTracks(type = 'public') {
       `${tracksCache.private.length} private, ` +
       `${tracksCache.all.length - tracksCache.enabled.length} disabled tracks`
     );
+
+    // Initialize file watcher after first cache load
+    initializeWatcher();
   }
 
   // Return filtered tracks based on type

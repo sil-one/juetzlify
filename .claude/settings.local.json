@@ -21,7 +21,11 @@
       "mcp__jetbrains__create_new_file",
       "mcp__jetbrains__list_directory_tree",
       "Bash(npm run dev:*)",
-      "Bash(npm run build:frontend:*)"
+      "Bash(npm run build:frontend:*)",
+      "Bash(docker run --rm juetzlify-test sh -c \"cd /app/backend && node_modules/.bin/pm2-runtime start ecosystem.config.js --env production\")",
+      "Bash(docker run --rm juetzlify-test sh -c \"cd /app/backend && cat ecosystem.config.js | head -5\")",
+      "Bash(docker run:*)",
+      "Bash(docker build:*)"
     ]
   }
 }
