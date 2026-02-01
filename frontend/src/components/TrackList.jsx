@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { getColorForImage } from '../hooks/useColorExtractor';
+import DownloadButton from './DownloadButton';
 
 // Swipe threshold to trigger add to queue (in pixels)
 const SWIPE_THRESHOLD = 120;
@@ -219,12 +220,20 @@ const TrackItem = ({ track, isCurrentTrack, displayNumber, onTrackSelect, onAddT
           </p>
         </div>
 
-        {/* Duration */}
-        {track.duration > 0 && (
-          <span className="text-sm text-sp-text-muted tabular-nums">
-            {Math.floor(track.duration / 60)}:{String(Math.floor(track.duration % 60)).padStart(2, '0')}
-          </span>
-        )}
+        {/* Download button and duration */}
+        <div className="flex items-center gap-3">
+          <DownloadButton
+            trackId={track.id}
+            track={track}
+            size="small"
+            className="opacity-0 group-hover:opacity-100 md:opacity-100 transition-opacity"
+          />
+          {track.duration > 0 && (
+            <span className="text-sm text-sp-text-muted tabular-nums">
+              {Math.floor(track.duration / 60)}:{String(Math.floor(track.duration % 60)).padStart(2, '0')}
+            </span>
+          )}
+        </div>
 
         {/* Visibility indicators - only visible to admins */}
         {isAdmin && (

@@ -57,7 +57,7 @@ router.post('/refresh', async (req, res) => {
 router.post('/:trackId/play', async (req, res) => {
   try {
     const { trackId } = req.params;
-    const { visibility } = req.body;
+    const { visibility, timestamp } = req.body;
 
     if (!visibility || !['public', 'private'].includes(visibility)) {
       return res.status(400).json({
@@ -75,14 +75,15 @@ router.post('/:trackId/play', async (req, res) => {
       });
     }
 
-    // Record the play with full metadata
+    // Record the play with full metadata and optional timestamp
     const result = await recordPlay(
       trackId,
       track.filename,
       visibility,
       track.title,
       track.artist,
-      track.album
+      track.album,
+      timestamp // Pass optional timestamp for offline plays
     );
 
     res.json({

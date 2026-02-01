@@ -1,13 +1,46 @@
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
+import lockfile from 'proper-lockfile';
 import { config } from '../config/config.js';
 
 const STATISTICS_FILE = path.join(config.dataPath, 'play-statistics.json');
 const STATISTICS_TMP = STATISTICS_FILE + '.tmp';
+const STATISTICS_LOCK = STATISTICS_FILE + '.lock';
 
 let statisticsCache = null;
 let pendingPlays = [];
 let batchWriterInterval = null;
+let statisticsWatcher = null;
+
+/**
+ * Initialize file watcher for play-statistics.json
+ * Ensures all PM2 workers see statistics updates in real-time
+ */
+function initializeStatisticsWatcher() {
+  if (statisticsWatcher) return; // Already watching
+
+  try {
+    // Check if file exists before watching
+    if (!fsSync.existsSync(STATISTICS_FILE)) {
+      console.log('play-statistics.json not found yet, watcher will start when file is created');
+      return;
+    }
+
+    statisticsWatcher = fsSync.watch(STATISTICS_FILE, (eventType) => {
+      if (eventType === 'change') {
+        // Clear cache so next read loads fresh data from disk
+        // This synchronizes all PM2 workers
+        statisticsCache = null;
+        console.log('Statistics file changed, cache cleared across worker');
+      }
+    });
+
+    console.log('✓ Statistics file watcher initialized');
+  } catch (error) {
+    console.warn('⚠ Could not initialize statistics watcher:', error.message);
+  }
+}
 
 /**
  * Carnival 2026 date configuration
@@ -63,29 +96,73 @@ async function loadStatistics() {
 }
 
 /**
- * Atomic write to file (write to .tmp, then rename)
+ * Atomic write to file with file locking (write to .tmp, then rename)
+ * Prevents race conditions in PM2 cluster mode
  */
 async function atomicWriteStatistics(statistics) {
+  let release = null;
+
   try {
     await ensureDataDir();
+
+    // Create file if it doesn't exist (required for lockfile)
+    try {
+      await fs.access(STATISTICS_FILE);
+    } catch {
+      const initialData = {
+        plays: [],
+        carnival2026: CARNIVAL_2026,
+      };
+      await fs.writeFile(STATISTICS_FILE, JSON.stringify(initialData, null, 2), 'utf-8');
+    }
+
+    // Acquire exclusive lock (wait up to 10s, retry every 100ms)
+    release = await lockfile.lock(STATISTICS_FILE, {
+      retries: {
+        retries: 100,
+        minTimeout: 100,
+        maxTimeout: 500,
+      },
+      stale: 10000, // Consider lock stale after 10s
+    });
+
+    console.log('[Statistics] Lock acquired, writing statistics...');
+
     // Write to temporary file first
     await fs.writeFile(
       STATISTICS_TMP,
       JSON.stringify(statistics, null, 2),
       'utf-8'
     );
-    // Atomic rename
+
+    // Atomic rename (overwrites target atomically)
     await fs.rename(STATISTICS_TMP, STATISTICS_FILE);
-    statisticsCache = null; // Clear cache after write
+
+    // Clear cache after write
+    statisticsCache = null;
+
+    console.log('[Statistics] Statistics saved successfully');
   } catch (error) {
     console.error('Error saving play statistics:', error.message);
+
     // Clean up temp file if it exists
     try {
       await fs.unlink(STATISTICS_TMP);
-    } catch (e) {
-      // Ignore
+    } catch {
+      // Ignore cleanup errors
     }
+
     throw error;
+  } finally {
+    // Always release the lock
+    if (release) {
+      try {
+        await release();
+        console.log('[Statistics] Lock released');
+      } catch (error) {
+        console.error('[Statistics] Error releasing lock:', error.message);
+      }
+    }
   }
 }
 
@@ -110,10 +187,11 @@ async function getStatistics() {
 
 /**
  * Record a play after 15 seconds (adds to queue for batch writing)
+ * @param {string} timestamp - Optional timestamp for offline plays (ISO string)
  */
-export async function recordPlay(trackId, filename, visibility, title, artist, album) {
+export async function recordPlay(trackId, filename, visibility, title, artist, album, timestamp) {
   try {
-    const now = new Date();
+    const now = timestamp ? new Date(timestamp) : new Date();
     const play = {
       trackId,
       filename,
@@ -132,7 +210,7 @@ export async function recordPlay(trackId, filename, visibility, title, artist, a
     const statistics = await getStatistics();
     const totalPlays = statistics.plays.length + pendingPlays.length;
 
-    console.log(`Play queued: ${title || filename} by ${artist || 'Unknown Artist'} (${visibility})`);
+    console.log(`Play queued: ${title || filename} by ${artist || 'Unknown Artist'} (${visibility})${timestamp ? ' [offline sync]' : ''}`);
     return { success: true, totalPlays };
   } catch (error) {
     console.error('Error recording play:', error.message);
@@ -350,29 +428,78 @@ export function clearStatisticsCache() {
 }
 
 /**
- * Flush pending plays to disk (batch write)
+ * Flush pending plays to disk (batch write with file locking)
+ * Ensures atomic read-modify-write across PM2 instances
  */
 async function flushPendingPlays() {
   if (pendingPlays.length === 0) {
     return; // Nothing to write
   }
 
+  let release = null;
+
   try {
-    const statistics = await getStatistics();
-    const playsToWrite = [...pendingPlays]; // Copy for atomic operation
+    await ensureDataDir();
+
+    // Create file if it doesn't exist (required for lockfile)
+    try {
+      await fs.access(STATISTICS_FILE);
+    } catch {
+      const initialData = {
+        plays: [],
+        carnival2026: CARNIVAL_2026,
+      };
+      await fs.writeFile(STATISTICS_FILE, JSON.stringify(initialData, null, 2), 'utf-8');
+    }
+
+    // Acquire exclusive lock BEFORE reading
+    release = await lockfile.lock(STATISTICS_FILE, {
+      retries: {
+        retries: 100,
+        minTimeout: 100,
+        maxTimeout: 500,
+      },
+      stale: 10000,
+    });
+
+    console.log(`[Statistics] Lock acquired for batch write (${pendingPlays.length} plays)...`);
+
+    // NOW read the file with lock held (ensures latest data)
+    const data = await fs.readFile(STATISTICS_FILE, 'utf-8');
+    const statistics = JSON.parse(data);
+
+    // Add pending plays
+    const playsToWrite = [...pendingPlays];
     statistics.plays.push(...playsToWrite);
 
-    await atomicWriteStatistics(statistics);
+    // Write to temporary file first
+    await fs.writeFile(
+      STATISTICS_TMP,
+      JSON.stringify(statistics, null, 2),
+      'utf-8'
+    );
 
-    // Clear pending queue only after successful write
+    // Atomic rename
+    await fs.rename(STATISTICS_TMP, STATISTICS_FILE);
+
+    // Clear cache and pending queue only after successful write
+    statisticsCache = null;
     pendingPlays = [];
 
-    if (playsToWrite.length > 0) {
-      console.log(`✓ Batch written ${playsToWrite.length} play records to disk`);
-    }
+    console.log(`✓ Batch written ${playsToWrite.length} play records to disk`);
   } catch (error) {
     console.error('Error flushing pending plays:', error.message);
     // Don't clear pending plays on error - they'll be retried next interval
+  } finally {
+    // Always release the lock
+    if (release) {
+      try {
+        await release();
+        console.log('[Statistics] Lock released');
+      } catch (error) {
+        console.error('[Statistics] Error releasing lock:', error.message);
+      }
+    }
   }
 }
 
@@ -387,6 +514,9 @@ export function initializeBatchWriter(intervalMs = 5000) {
 
   console.log(`Starting batch writer (interval: ${intervalMs}ms)`);
   batchWriterInterval = setInterval(flushPendingPlays, intervalMs);
+
+  // Initialize file watcher to sync statistics across PM2 workers
+  initializeStatisticsWatcher();
 
   // Ensure pending plays are flushed on process exit
   process.on('SIGTERM', () => {

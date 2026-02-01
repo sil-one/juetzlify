@@ -4,12 +4,14 @@ import { useAuth } from '../hooks/useAuth';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { useScrollPosition } from '../hooks/useScrollPosition';
 import { useFeaturedShowOverlay } from '../hooks/useFeaturedShowOverlay';
+import { useDownloads } from '../contexts/DownloadsContext';
 import AudioPlayer from '../components/AudioPlayer';
 import TrackList from '../components/TrackList';
 import Queue from '../components/Queue';
 import PasswordPrompt from '../components/PasswordPrompt';
 import StickyPlayerBar from '../components/StickyPlayerBar';
 import FeaturedShowOverlay from '../components/FeaturedShowOverlay';
+import OfflineIndicator from '../components/OfflineIndicator';
 import { API_BASE_URL } from '../utils/constants';
 
 const PrivatePage = () => {
@@ -19,6 +21,8 @@ const PrivatePage = () => {
   const [error, setError] = useState(null);
   const [authError, setAuthError] = useState(null);
   const [wrappedEnabled, setWrappedEnabled] = useState(false);
+
+  const { syncOfflinePlays } = useDownloads();
 
   const {
     audioRef,
@@ -43,7 +47,7 @@ const PrivatePage = () => {
     handleTimeUpdate,
     handleLoadedMetadata,
     handleEnded,
-  } = useAudioPlayer(tracks);
+  } = useAudioPlayer(tracks, syncOfflinePlays);
 
   // Detect scroll position for sticky player
   const isScrolledPast = useScrollPosition(400);
@@ -138,6 +142,7 @@ const PrivatePage = () => {
 
   return (
     <div className="min-h-screen">
+      <OfflineIndicator />
       <AudioPlayer
         currentTrack={currentTrack}
         isPlaying={isPlaying}

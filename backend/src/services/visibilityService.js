@@ -1,14 +1,45 @@
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
+import lockfile from 'proper-lockfile';
 import { config } from '../config/config.js';
 
 const METADATA_FILE = path.join(config.dataPath, 'track-visibility.json');
+const METADATA_TMP = METADATA_FILE + '.tmp';
+const METADATA_LOCK = METADATA_FILE + '.lock';
 const OLD_PUBLIC_DIR = path.join(config.tracksPath, 'public');
 const OLD_PRIVATE_DIR = path.join(config.tracksPath, 'private');
 const NEW_ALL_DIR = path.join(config.tracksPath, 'all');
 
 let visibilityCache = null;
 let migrationCompleted = false;
+let visibilityWatcher = null;
+
+/**
+ * Initialize file watcher for track-visibility.json
+ * Ensures all PM2 workers see visibility changes in real-time
+ */
+function initializeVisibilityWatcher() {
+  if (visibilityWatcher) return;
+
+  try {
+    if (!fsSync.existsSync(METADATA_FILE)) {
+      console.log('track-visibility.json not found yet, watcher will start when file is created');
+      return;
+    }
+
+    visibilityWatcher = fsSync.watch(METADATA_FILE, (eventType) => {
+      if (eventType === 'change') {
+        visibilityCache = null;
+        console.log('Track visibility metadata changed, cache cleared across worker');
+      }
+    });
+
+    console.log('✓ Visibility metadata watcher initialized');
+  } catch (error) {
+    console.warn('⚠ Could not initialize visibility watcher:', error.message);
+  }
+}
 
 /**
  * Track visibility states
@@ -48,16 +79,69 @@ async function loadMetadata() {
 }
 
 /**
- * Save visibility metadata to file
+ * Save visibility metadata to file with atomic write and file locking
+ * Prevents race conditions in PM2 cluster mode
  */
 async function saveMetadata(metadata) {
+  let release = null;
+
   try {
     await ensureDataDir();
-    await fs.writeFile(METADATA_FILE, JSON.stringify(metadata, null, 2), 'utf-8');
-    visibilityCache = null; // Clear cache
+
+    // Create file if it doesn't exist (required for lockfile)
+    try {
+      await fs.access(METADATA_FILE);
+    } catch {
+      await fs.writeFile(METADATA_FILE, JSON.stringify({ tracks: {} }, null, 2), 'utf-8');
+    }
+
+    // Acquire exclusive lock (wait up to 10s, retry every 100ms)
+    release = await lockfile.lock(METADATA_FILE, {
+      retries: {
+        retries: 100,
+        minTimeout: 100,
+        maxTimeout: 500,
+      },
+      stale: 10000, // Consider lock stale after 10s
+    });
+
+    console.log('[Visibility] Lock acquired, writing metadata...');
+
+    // Write to temporary file first
+    await fs.writeFile(
+      METADATA_TMP,
+      JSON.stringify(metadata, null, 2),
+      'utf-8'
+    );
+
+    // Atomic rename (overwrites target atomically)
+    await fs.rename(METADATA_TMP, METADATA_FILE);
+
+    // Clear cache after successful write
+    visibilityCache = null;
+
+    console.log('[Visibility] Metadata saved successfully');
   } catch (error) {
     console.error('Error saving visibility metadata:', error.message);
+
+    // Clean up temp file if it exists
+    try {
+      await fs.unlink(METADATA_TMP);
+    } catch {
+      // Ignore cleanup errors
+    }
+
     throw error;
+  } finally {
+    // Always release the lock
+    if (release) {
+      try {
+        await release();
+        console.log('[Visibility] Lock released');
+      } catch (error) {
+        console.error('[Visibility] Error releasing lock:', error.message);
+      }
+    }
   }
 }
 
@@ -196,6 +280,10 @@ export async function getVisibilityMetadata() {
 
   const metadata = await loadMetadata();
   visibilityCache = metadata;
+
+  // Initialize watcher after first load
+  initializeVisibilityWatcher();
+
   return metadata;
 }
 
@@ -208,18 +296,77 @@ export async function getTrackVisibility(filename) {
 }
 
 /**
- * Set visibility for a specific track
+ * Set visibility for a specific track with atomic read-modify-write
  */
 export async function setTrackVisibility(filename, visibility) {
   if (!Object.values(Visibility).includes(visibility)) {
     throw new Error(`Invalid visibility: ${visibility}`);
   }
 
-  const metadata = await getVisibilityMetadata();
-  metadata.tracks[filename] = visibility;
-  await saveMetadata(metadata);
+  let release = null;
 
-  return { success: true, filename, visibility };
+  try {
+    await ensureDataDir();
+
+    // Create file if it doesn't exist
+    try {
+      await fs.access(METADATA_FILE);
+    } catch {
+      await fs.writeFile(METADATA_FILE, JSON.stringify({ tracks: {} }, null, 2), 'utf-8');
+    }
+
+    // Acquire lock BEFORE reading
+    release = await lockfile.lock(METADATA_FILE, {
+      retries: {
+        retries: 100,
+        minTimeout: 100,
+        maxTimeout: 500,
+      },
+      stale: 10000,
+    });
+
+    console.log(`[Visibility] Lock acquired for updating ${filename}...`);
+
+    // Read latest data with lock held
+    const data = await fs.readFile(METADATA_FILE, 'utf-8');
+    const metadata = JSON.parse(data);
+
+    // Modify
+    metadata.tracks[filename] = visibility;
+
+    // Write to temp file
+    await fs.writeFile(METADATA_TMP, JSON.stringify(metadata, null, 2), 'utf-8');
+
+    // Atomic rename
+    await fs.rename(METADATA_TMP, METADATA_FILE);
+
+    // Clear cache
+    visibilityCache = null;
+
+    console.log(`[Visibility] Updated ${filename} to ${visibility}`);
+
+    return { success: true, filename, visibility };
+  } catch (error) {
+    console.error('Error setting track visibility:', error.message);
+
+    // Clean up temp file
+    try {
+      await fs.unlink(METADATA_TMP);
+    } catch {
+      // Ignore
+    }
+
+    throw error;
+  } finally {
+    if (release) {
+      try {
+        await release();
+        console.log('[Visibility] Lock released');
+      } catch (error) {
+        console.error('[Visibility] Error releasing lock:', error.message);
+      }
+    }
+  }
 }
 
 /**

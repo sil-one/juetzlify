@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { API_BASE_URL } from '../utils/constants';
+import { useOnlineStatus } from './useOnlineStatus';
+import { queueOfflinePlay } from '../services/offlinePlayService';
 
-export const useAudioPlayer = (tracks = []) => {
+export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
   const audioRef = useRef(null);
   const [currentTrack, setCurrentTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -40,6 +42,7 @@ export const useAudioPlayer = (tracks = []) => {
   const playRecordedRef = useRef(false);
   const playTimerRef = useRef(null);
   const shouldAutoPlayRef = useRef(true);
+  const isOnline = useOnlineStatus();
 
   // Update audio element when track changes
   useEffect(() => {
@@ -127,6 +130,13 @@ export const useAudioPlayer = (tracks = []) => {
     }
   }, [isRepeatOn]);
 
+  // Sync offline plays when reconnecting
+  useEffect(() => {
+    if (isOnline && syncOfflinePlays) {
+      syncOfflinePlays();
+    }
+  }, [isOnline, syncOfflinePlays]);
+
   // Play tracking: Record play after 15 seconds
   useEffect(() => {
     // Clear any existing timer
@@ -143,16 +153,40 @@ export const useAudioPlayer = (tracks = []) => {
     // Start timer when playing
     if (isPlaying && currentTrack && !playRecordedRef.current) {
       playTimerRef.current = setTimeout(async () => {
-        try {
-          await fetch(`${API_BASE_URL}/tracks/${currentTrack.id}/play`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ visibility: currentTrack.visibility }),
-          });
+        const playData = {
+          trackId: currentTrack.id,
+          filename: currentTrack.filename,
+          title: currentTrack.title,
+          artist: currentTrack.artist,
+          album: currentTrack.album,
+          visibility: currentTrack.visibility,
+          timestamp: new Date().toISOString(),
+          date: new Date().toISOString().split('T')[0],
+        };
+
+        if (isOnline) {
+          try {
+            await fetch(`${API_BASE_URL}/tracks/${currentTrack.id}/play`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                visibility: currentTrack.visibility,
+                timestamp: playData.timestamp,
+              }),
+            });
+            playRecordedRef.current = true;
+            console.log(`Play recorded: ${currentTrack.title}`);
+          } catch (error) {
+            console.error('Failed to record play, queuing offline:', error);
+            // Network error - queue offline
+            queueOfflinePlay(playData);
+            playRecordedRef.current = true; // Don't retry this session
+          }
+        } else {
+          // Offline - queue immediately
+          console.log(`Offline - queuing play: ${currentTrack.title}`);
+          queueOfflinePlay(playData);
           playRecordedRef.current = true;
-          console.log(`Play recorded: ${currentTrack.title}`);
-        } catch (error) {
-          console.error('Failed to record play:', error);
         }
       }, 15000); // 15 seconds
     }
@@ -164,7 +198,7 @@ export const useAudioPlayer = (tracks = []) => {
         playTimerRef.current = null;
       }
     };
-  }, [isPlaying, currentTrack]);
+  }, [isPlaying, currentTrack, isOnline]);
 
   const playTrack = (track, autoplay = true) => {
     shouldAutoPlayRef.current = autoplay;

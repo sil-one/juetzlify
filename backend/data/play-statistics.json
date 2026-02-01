@@ -269,6 +269,56 @@
       "timestamp": "2026-02-01T11:54:51.706Z",
       "date": "2026-02-01",
       "visibility": "public"
+    },
+    {
+      "trackId": "track-9-Ragazza--se-tu-vuoi-ballare-mp3",
+      "filename": "Ragazza, se tu vuoi ballare.mp3",
+      "title": "Ragazza, se tu vuoi ballare",
+      "artist": "Jützlitypen",
+      "album": "Fasnacht 26",
+      "timestamp": "2026-02-01T20:00:20.749Z",
+      "date": "2026-02-01",
+      "visibility": "public"
+    },
+    {
+      "trackId": "track-5-Bel-Paese--G-N-O-C-C-H-I--mp3",
+      "filename": "Bel Paese (G-N-O-C-C-H-I).mp3",
+      "title": "Bel Paese (G-N-O-C-C-H-I)",
+      "artist": "Lucky Hiob feat. Jützlitypen",
+      "album": "Fasnacht 26",
+      "timestamp": "2026-02-01T20:02:14.807Z",
+      "date": "2026-02-01",
+      "visibility": "public"
+    },
+    {
+      "trackId": "track-7-Inna--mit-da--Fa-a-li-mp3",
+      "filename": "Innä mit dä Fääli.mp3",
+      "title": "Innä mit dä Fääli",
+      "artist": "Tschonny Blutt",
+      "album": "Fasnacht 26",
+      "timestamp": "2026-02-01T20:57:12.717Z",
+      "date": "2026-02-01",
+      "visibility": "public"
+    },
+    {
+      "trackId": "track-9-Ragazza--se-tu-vuoi-ballare-mp3",
+      "filename": "Ragazza, se tu vuoi ballare.mp3",
+      "title": "Ragazza, se tu vuoi ballare",
+      "artist": "Jützlitypen",
+      "album": "Fasnacht 26",
+      "timestamp": "2026-02-01T20:57:38.506Z",
+      "date": "2026-02-01",
+      "visibility": "public"
+    },
+    {
+      "trackId": "track-5-Bel-Paese--G-N-O-C-C-H-I--mp3",
+      "filename": "Bel Paese (G-N-O-C-C-H-I).mp3",
+      "title": "Bel Paese (G-N-O-C-C-H-I)",
+      "artist": "Lucky Hiob feat. Jützlitypen",
+      "album": "Fasnacht 26",
+      "timestamp": "2026-02-01T21:00:53.887Z",
+      "date": "2026-02-01",
+      "visibility": "public"
     }
   ],
   "carnival2026": {

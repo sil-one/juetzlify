@@ -2,6 +2,7 @@ import React from 'react';
 import AlbumArt from './AlbumArt';
 import TrackInfo from './TrackInfo';
 import useColorExtractor from '../hooks/useColorExtractor';
+import DownloadButton from './DownloadButton';
 
 const AudioPlayer = ({
   currentTrack,
@@ -76,6 +77,7 @@ const AudioPlayer = ({
 
             <audio
               ref={audioRef}
+              preload="auto"
               onTimeUpdate={onTimeUpdate}
               onLoadedMetadata={onLoadedMetadata}
               onEnded={onEnded}
@@ -193,6 +195,16 @@ const AudioPlayer = ({
                     <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
                   </svg>
                 </button>
+              </div>
+
+              {/* Download button row */}
+              <div className="flex justify-center items-center mt-4">
+                <DownloadButton
+                  trackId={currentTrack.id}
+                  track={currentTrack}
+                  size="medium"
+                  showLabel={true}
+                />
               </div>
             </div>
           </>

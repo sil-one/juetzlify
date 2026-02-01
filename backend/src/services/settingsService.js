@@ -1,12 +1,42 @@
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
+import lockfile from 'proper-lockfile';
 import { config } from '../config/config.js';
 
 const SETTINGS_FILE = path.join(config.dataPath, 'settings.json');
 const SETTINGS_TMP = SETTINGS_FILE + '.tmp';
+const SETTINGS_LOCK = SETTINGS_FILE + '.lock';
 const STATISTICS_FILE = path.join(config.dataPath, 'play-statistics.json');
 
 let settingsCache = null;
+let settingsWatcher = null;
+
+/**
+ * Initialize file watcher for settings.json
+ * Ensures all PM2 workers see settings updates (wrapped, ads) in real-time
+ */
+function initializeSettingsWatcher() {
+  if (settingsWatcher) return;
+
+  try {
+    if (!fsSync.existsSync(SETTINGS_FILE)) {
+      console.log('settings.json not found yet, watcher will start when file is created');
+      return;
+    }
+
+    settingsWatcher = fsSync.watch(SETTINGS_FILE, (eventType) => {
+      if (eventType === 'change') {
+        settingsCache = null;
+        console.log('Settings file changed (wrapped/ads), cache cleared across worker');
+      }
+    });
+
+    console.log('✓ Settings file watcher initialized');
+  } catch (error) {
+    console.warn('⚠ Could not initialize settings watcher:', error.message);
+  }
+}
 
 /**
  * Ensure data directory exists
@@ -76,29 +106,69 @@ async function migrateFromStatistics() {
 }
 
 /**
- * Atomic write to file (write to .tmp, then rename)
+ * Atomic write to file with file locking (write to .tmp, then rename)
+ * Prevents race conditions in PM2 cluster mode
  */
 async function atomicWriteSettings(settings) {
+  let release = null;
+
   try {
     await ensureDataDir();
+
+    // Create file if it doesn't exist (required for lockfile)
+    try {
+      await fs.access(SETTINGS_FILE);
+    } catch {
+      await fs.writeFile(SETTINGS_FILE, JSON.stringify(getDefaultSettings(), null, 2), 'utf-8');
+    }
+
+    // Acquire exclusive lock (wait up to 10s, retry every 100ms)
+    release = await lockfile.lock(SETTINGS_FILE, {
+      retries: {
+        retries: 100,
+        minTimeout: 100,
+        maxTimeout: 500,
+      },
+      stale: 10000, // Consider lock stale after 10s
+    });
+
+    console.log('[Settings] Lock acquired, writing settings...');
+
     // Write to temporary file first
     await fs.writeFile(
       SETTINGS_TMP,
       JSON.stringify(settings, null, 2),
       'utf-8'
     );
-    // Atomic rename
+
+    // Atomic rename (overwrites target atomically)
     await fs.rename(SETTINGS_TMP, SETTINGS_FILE);
-    settingsCache = null; // Clear cache after write
+
+    // Clear cache after write
+    settingsCache = null;
+
+    console.log('[Settings] Settings saved successfully');
   } catch (error) {
     console.error('Error saving settings:', error.message);
+
     // Clean up temp file if it exists
     try {
       await fs.unlink(SETTINGS_TMP);
-    } catch (e) {
-      // Ignore
+    } catch {
+      // Ignore cleanup errors
     }
+
     throw error;
+  } finally {
+    // Always release the lock
+    if (release) {
+      try {
+        await release();
+        console.log('[Settings] Lock released');
+      } catch (error) {
+        console.error('[Settings] Error releasing lock:', error.message);
+      }
+    }
   }
 }
 
@@ -118,6 +188,10 @@ async function getSettings() {
   }
   const settings = await loadSettings();
   settingsCache = settings;
+
+  // Initialize watcher after first load
+  initializeSettingsWatcher();
+
   return settings;
 }
 
@@ -130,18 +204,81 @@ export async function getWrappedStatus() {
 }
 
 /**
- * Set wrapped page enabled status
+ * Set wrapped page enabled status with atomic read-modify-write
  */
 export async function setWrappedEnabled(type, enabled) {
   if (type !== 'public' && type !== 'private') {
     throw new Error('Invalid wrapped type. Must be "public" or "private"');
   }
 
-  const settings = await getSettings();
-  settings.wrappedEnabled[type] = enabled;
-  await saveSettings(settings);
+  let release = null;
 
-  return { success: true, type, enabled };
+  try {
+    await ensureDataDir();
+
+    // Create file if it doesn't exist
+    try {
+      await fs.access(SETTINGS_FILE);
+    } catch {
+      await fs.writeFile(SETTINGS_FILE, JSON.stringify(getDefaultSettings(), null, 2), 'utf-8');
+    }
+
+    // Acquire lock BEFORE reading
+    release = await lockfile.lock(SETTINGS_FILE, {
+      retries: {
+        retries: 100,
+        minTimeout: 100,
+        maxTimeout: 500,
+      },
+      stale: 10000,
+    });
+
+    console.log(`[Settings] Lock acquired for updating wrapped ${type}...`);
+
+    // Read latest data with lock held
+    const data = await fs.readFile(SETTINGS_FILE, 'utf-8');
+    const settings = JSON.parse(data);
+
+    // Ensure structure exists
+    if (!settings.wrappedEnabled) {
+      settings.wrappedEnabled = { public: false, private: false };
+    }
+
+    // Modify
+    settings.wrappedEnabled[type] = enabled;
+
+    // Write to temp file
+    await fs.writeFile(SETTINGS_TMP, JSON.stringify(settings, null, 2), 'utf-8');
+
+    // Atomic rename
+    await fs.rename(SETTINGS_TMP, SETTINGS_FILE);
+
+    // Clear cache
+    settingsCache = null;
+
+    console.log(`[Settings] Updated wrapped ${type} to ${enabled}`);
+
+    return { success: true, type, enabled };
+  } catch (error) {
+    console.error('Error setting wrapped enabled:', error.message);
+
+    try {
+      await fs.unlink(SETTINGS_TMP);
+    } catch {
+      // Ignore
+    }
+
+    throw error;
+  } finally {
+    if (release) {
+      try {
+        await release();
+        console.log('[Settings] Lock released');
+      } catch (error) {
+        console.error('[Settings] Error releasing lock:', error.message);
+      }
+    }
+  }
 }
 
 /**
@@ -161,18 +298,81 @@ export async function getPodcastAdsStatus() {
 }
 
 /**
- * Set podcast ads enabled status
+ * Set podcast ads enabled status with atomic read-modify-write
  */
 export async function setPodcastAdsEnabled(type, enabled) {
   if (type !== 'public' && type !== 'private') {
     throw new Error('Invalid podcast ads type. Must be "public" or "private"');
   }
 
-  const settings = await getSettings();
-  settings.podcastAdsEnabled[type] = enabled;
-  await saveSettings(settings);
+  let release = null;
 
-  return { success: true, type, enabled };
+  try {
+    await ensureDataDir();
+
+    // Create file if it doesn't exist
+    try {
+      await fs.access(SETTINGS_FILE);
+    } catch {
+      await fs.writeFile(SETTINGS_FILE, JSON.stringify(getDefaultSettings(), null, 2), 'utf-8');
+    }
+
+    // Acquire lock BEFORE reading
+    release = await lockfile.lock(SETTINGS_FILE, {
+      retries: {
+        retries: 100,
+        minTimeout: 100,
+        maxTimeout: 500,
+      },
+      stale: 10000,
+    });
+
+    console.log(`[Settings] Lock acquired for updating podcast ads ${type}...`);
+
+    // Read latest data with lock held
+    const data = await fs.readFile(SETTINGS_FILE, 'utf-8');
+    const settings = JSON.parse(data);
+
+    // Ensure structure exists
+    if (!settings.podcastAdsEnabled) {
+      settings.podcastAdsEnabled = { public: true, private: true };
+    }
+
+    // Modify
+    settings.podcastAdsEnabled[type] = enabled;
+
+    // Write to temp file
+    await fs.writeFile(SETTINGS_TMP, JSON.stringify(settings, null, 2), 'utf-8');
+
+    // Atomic rename
+    await fs.rename(SETTINGS_TMP, SETTINGS_FILE);
+
+    // Clear cache
+    settingsCache = null;
+
+    console.log(`[Settings] Updated podcast ads ${type} to ${enabled}`);
+
+    return { success: true, type, enabled };
+  } catch (error) {
+    console.error('Error setting podcast ads enabled:', error.message);
+
+    try {
+      await fs.unlink(SETTINGS_TMP);
+    } catch {
+      // Ignore
+    }
+
+    throw error;
+  } finally {
+    if (release) {
+      try {
+        await release();
+        console.log('[Settings] Lock released');
+      } catch (error) {
+        console.error('[Settings] Error releasing lock:', error.message);
+      }
+    }
+  }
 }
 
 /**

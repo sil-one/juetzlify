@@ -65,8 +65,8 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`Tracks path: ${config.tracksPath}`);
   console.log(`Cache path: ${config.cachePath}\n`);
 
-  // Initialize batch writer for statistics
-  initializeBatchWriter();
+  // Initialize batch writer for statistics (1s interval for PM2 cluster sync)
+  initializeBatchWriter(1000);
 
   // Preload tracks on startup
   console.log('Loading tracks...');
