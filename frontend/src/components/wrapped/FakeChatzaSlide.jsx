@@ -20,7 +20,7 @@ const FakeChatzaSlide = () => {
       <div className="wrapped-label">mal der komplett Chatzämüsigmarsch gspilt</div>
       <div className="wrapped-divider" />
       <p className="wrapped-text">
-        Vo Afang bis Änd. Das isch echti Hingab!
+        Vo Afang bis Änd. Äs paar mal hender drnäbägschlagä. Mer hends scho gheert.
       </p>
     </motion.div>
   );

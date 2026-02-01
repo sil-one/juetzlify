@@ -30,7 +30,7 @@ const TopFiveSlide = ({ topTracks }) => {
       className="slide-container"
     >
       <div className="wrapped-label" style={{ marginBottom: '2rem' }}>
-        Dini Top 5
+        Fasnacht 2026 Top 5
       </div>
 
       {/* #1 Track - Big with Album Art */}

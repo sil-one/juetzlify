@@ -15,7 +15,7 @@ const TotalPlaysSlide = ({ uniqueTracks, totalPlays }) => {
         duration={2}
         className="wrapped-big-number"
       />
-      <div className="wrapped-label">verschiedeni Lieder</div>
+      <div className="wrapped-label">verschiedeni Liäder</div>
 
       <div style={{ margin: '2rem 0' }}>
         <CountUp
@@ -29,7 +29,7 @@ const TotalPlaysSlide = ({ uniqueTracks, totalPlays }) => {
 
       <div className="wrapped-divider" />
       <p className="wrapped-text">
-        Das isch ä huufä Müsig für eini Fasnacht!
+        Mer hoffed äs heig Spass gmacht!
       </p>
     </motion.div>
   );

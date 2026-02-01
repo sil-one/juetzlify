@@ -19,12 +19,15 @@ const AdminPage = () => {
   const [uploadProgress, setUploadProgress] = useState(null);
   const [wrappedStatus, setWrappedStatus] = useState({ public: false, private: false });
   const [podcastAdsStatus, setPodcastAdsStatus] = useState({ public: true, private: true });
+  const [bannerVersion, setBannerVersion] = useState(1);
+  const [isBumping, setIsBumping] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
       checkAndMigrate();
       fetchWrappedStatus();
       fetchPodcastAdsStatus();
+      fetchBannerVersion();
     }
   }, [isAuthenticated]);
 
@@ -184,6 +187,47 @@ const AdminPage = () => {
     } catch (err) {
       console.error('Error toggling podcast ads:', err);
       alert('Failed to toggle podcast ads');
+    }
+  };
+
+  const fetchBannerVersion = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/banner/version`);
+      const data = await response.json();
+
+      if (data.success) {
+        setBannerVersion(data.version);
+      }
+    } catch (err) {
+      console.error('Error fetching banner version:', err);
+    }
+  };
+
+  const bumpBannerVersion = async () => {
+    try {
+      setIsBumping(true);
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/banner/version`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setBannerVersion(data.version);
+        alert(`Banner version updated to ${data.version}. All users will see the welcome banner again on their next visit.`);
+      } else {
+        alert(`Failed to bump banner version: ${data.message}`);
+      }
+    } catch (err) {
+      console.error('Error bumping banner version:', err);
+      alert('Failed to bump banner version');
+    } finally {
+      setIsBumping(false);
     }
   };
 
@@ -478,6 +522,36 @@ const AdminPage = () => {
                   />
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Welcome Banner */}
+        <div className="bg-sp-dark rounded-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold mb-4">Welcome Banner</h2>
+          <p className="text-sp-text-secondary text-sm mb-6">
+            Control the welcome banner shown on first visit. Bump the version to show the banner again to all users.
+          </p>
+          <div className="bg-sp-gray p-4 rounded-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h3 className="text-lg font-semibold">Current Version</h3>
+                  <span className="px-3 py-1 bg-sp-black rounded-full text-sp-green font-mono font-bold">
+                    v{bannerVersion}
+                  </span>
+                </div>
+                <p className="text-sm text-sp-text-secondary">
+                  Incrementing the version will force all users to see the welcome banner again on their next visit to the public page.
+                </p>
+              </div>
+              <button
+                onClick={bumpBannerVersion}
+                disabled={isBumping}
+                className="px-6 py-3 bg-sp-green hover:bg-[#27ae60] text-sp-black font-bold rounded-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-sp-green/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 whitespace-nowrap"
+              >
+                {isBumping ? 'Bumping...' : 'Bump Version'}
+              </button>
             </div>
           </div>
         </div>

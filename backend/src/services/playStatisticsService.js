@@ -275,8 +275,8 @@ export async function getCarnivalStatistics(includePrivate = false) {
     })
   );
 
-  // Find biggest day
-  const biggestDay = playsByDayWithNames.sort((a, b) => b.plays - a.plays)[0];
+  // Find biggest day (sort a copy to avoid mutating the original array)
+  const biggestDay = [...playsByDayWithNames].sort((a, b) => b.plays - a.plays)[0];
 
   // First and last track with metadata
   const firstPlay = carnivalPlays[0];

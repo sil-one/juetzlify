@@ -26,7 +26,7 @@ const FakeFasnachtsfleSlide = () => {
       <div className="wrapped-label">Fasnachtsflee umägriärt</div>
       <div className="wrapped-divider" />
       <p className="wrapped-text">
-        Ä riesigi Mängi Flee! Villicht sölletmer das nöchsts Johr besser im Griff ha.
+        Merci fürs üfläsä.
       </p>
     </motion.div>
   );

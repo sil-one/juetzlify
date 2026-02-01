@@ -3,10 +3,11 @@ import { motion } from 'framer-motion';
 const SlideNavigation = ({ currentSlide, totalSlides, onPrev, onNext, onDotClick }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 20, x: '-50%' }}
+      animate={{ opacity: 1, y: 0, x: '-50%' }}
       transition={{ delay: 0.5 }}
       className="slide-navigation"
+      style={{ left: '50%' }}
     >
       <button
         className="nav-arrow"

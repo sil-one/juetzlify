@@ -19,7 +19,7 @@ const FakeSchwangerSlide = () => {
       <div className="wrapped-label">niwi Schwangerschaftä</div>
       <div className="wrapped-divider" />
       <p className="wrapped-text">
-        D'Fasnacht 2026 wird ä legendäri! Mir gratulierä alinä wärdenä Eltärä.
+        Miär gratuliäret allnä wärdenä Eltärä.
       </p>
     </motion.div>
   );

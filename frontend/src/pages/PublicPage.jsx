@@ -9,6 +9,8 @@ import TrackList from '../components/TrackList';
 import Queue from '../components/Queue';
 import StickyPlayerBar from '../components/StickyPlayerBar';
 import FeaturedShowOverlay from '../components/FeaturedShowOverlay';
+import WelcomeBanner from '../components/WelcomeBanner';
+import CopyrightFooter from '../components/CopyrightFooter';
 import { API_BASE_URL } from '../utils/constants';
 
 const PublicPage = () => {
@@ -28,6 +30,8 @@ const PublicPage = () => {
     currentTime,
     duration,
     queue,
+    isShuffleOn,
+    isRepeatOn,
     playTrack,
     togglePlay,
     seek,
@@ -37,6 +41,8 @@ const PublicPage = () => {
     removeFromQueue,
     clearQueue,
     reorderQueue,
+    toggleShuffle,
+    toggleRepeat,
     handleTimeUpdate,
     handleLoadedMetadata,
     handleEnded,
@@ -127,6 +133,10 @@ const PublicPage = () => {
         onEnded={handleEnded}
         onPlayNext={playNext}
         onPlayPrevious={playPrevious}
+        isShuffleOn={isShuffleOn}
+        isRepeatOn={isRepeatOn}
+        onToggleShuffle={toggleShuffle}
+        onToggleRepeat={toggleRepeat}
       />
       <Queue
         queue={queue}
@@ -143,6 +153,7 @@ const PublicPage = () => {
           onAddToQueue={addToQueue}
           isAdmin={isAdmin}
         />
+        <CopyrightFooter />
       </div>
 
       {/* Wrapped Button */}
@@ -173,11 +184,18 @@ const PublicPage = () => {
         onTogglePlay={togglePlay}
         onPlayNext={playNext}
         onPlayPrevious={playPrevious}
+        isShuffleOn={isShuffleOn}
+        isRepeatOn={isRepeatOn}
+        onToggleShuffle={toggleShuffle}
+        onToggleRepeat={toggleRepeat}
         isVisible={isScrolledPast}
       />
 
       {/* Featured show overlay */}
       {shouldShowShow && <FeaturedShowOverlay show={selectedShow} onDismiss={dismissShow} />}
+
+      {/* Welcome banner */}
+      <WelcomeBanner />
     </div>
   );
 };

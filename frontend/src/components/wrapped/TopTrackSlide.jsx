@@ -27,7 +27,7 @@ const TopTrackSlide = ({ track }) => {
       className="slide-container"
     >
       <div className="wrapped-label" style={{ marginBottom: '2rem' }}>
-        Dini Top Track
+        Dr Nummer 1 Track
       </div>
 
       <div className="top-track-display">

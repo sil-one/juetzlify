@@ -16,9 +16,9 @@ const TimeOfDaySlide = ({ mostActiveTimeOfDay, timeOfDayStats }) => {
   }
 
   const periodNames = {
-    morning: 'Morge',
-    afternoon: 'Nachmittag',
-    evening: 'Obig',
+    morning: 'Morgä',
+    afternoon: 'Namittag',
+    evening: 'Abig',
     night: 'Nacht',
   };
 
@@ -47,7 +47,7 @@ const TimeOfDaySlide = ({ mostActiveTimeOfDay, timeOfDayStats }) => {
       className="slide-container"
     >
       <div className="wrapped-label" style={{ marginBottom: '1rem' }}>
-        Am meischte Müsig am
+        Am meischtä Müsig am
       </div>
 
       <div style={{ fontSize: '4rem', marginBottom: '0.5rem' }}>

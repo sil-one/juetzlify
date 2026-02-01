@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import CountdownTimer from './CountdownTimer';
 
 const Header = ({ isAuthenticated, onLogout }) => {
   const location = useLocation();
@@ -26,7 +27,7 @@ const Header = ({ isAuthenticated, onLogout }) => {
   return (
     <header className="glass-heavy sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center gap-2">
           <Link to="/" onClick={handleLogoClick} className="flex items-center gap-3 group">
             <div className="relative">
               <img
@@ -48,6 +49,7 @@ const Header = ({ isAuthenticated, onLogout }) => {
               <span className="text-sp-text group-hover:text-sp-green transition-colors duration-300 drop-shadow-lg">Jützlify</span>
             </span>
           </Link>
+          <CountdownTimer />
         </div>
       </div>
     </header>

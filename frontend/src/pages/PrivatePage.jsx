@@ -27,6 +27,8 @@ const PrivatePage = () => {
     currentTime,
     duration,
     queue,
+    isShuffleOn,
+    isRepeatOn,
     playTrack,
     togglePlay,
     seek,
@@ -36,6 +38,8 @@ const PrivatePage = () => {
     removeFromQueue,
     clearQueue,
     reorderQueue,
+    toggleShuffle,
+    toggleRepeat,
     handleTimeUpdate,
     handleLoadedMetadata,
     handleEnded,
@@ -147,6 +151,10 @@ const PrivatePage = () => {
         onEnded={handleEnded}
         onPlayNext={playNext}
         onPlayPrevious={playPrevious}
+        isShuffleOn={isShuffleOn}
+        isRepeatOn={isRepeatOn}
+        onToggleShuffle={toggleShuffle}
+        onToggleRepeat={toggleRepeat}
       />
       <Queue
         queue={queue}
@@ -192,6 +200,10 @@ const PrivatePage = () => {
         onTogglePlay={togglePlay}
         onPlayNext={playNext}
         onPlayPrevious={playPrevious}
+        isShuffleOn={isShuffleOn}
+        isRepeatOn={isRepeatOn}
+        onToggleShuffle={toggleShuffle}
+        onToggleRepeat={toggleRepeat}
         isVisible={isScrolledPast}
       />
 

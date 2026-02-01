@@ -11,7 +11,7 @@ const FirstLastSlide = ({ firstTrack, lastTrack }) => {
       className="slide-container"
     >
       <div className="wrapped-label" style={{ marginBottom: '2rem' }}>
-        Ersti & Letschi
+        Z erschtä und letschtä Liäd
       </div>
 
       <div className="first-last-container">
@@ -81,7 +81,7 @@ const FirstLastSlide = ({ firstTrack, lastTrack }) => {
       </div>
 
       <p className="wrapped-text" style={{ marginTop: '1.5rem' }}>
-        Vo Afang bis Änd - ä perfekti Fasnacht!
+        Vo Afang bis Ändi - ä perfekti Fasnacht!
       </p>
     </motion.div>
   );

@@ -25,7 +25,7 @@ const BiggestDaySlide = ({ biggestDay }) => {
       className="slide-container"
     >
       <div className="wrapped-label" style={{ marginBottom: '1rem' }}>
-        Dä gröschti Tag
+        Am meischstä Jützlify brücht wordä isch am:
       </div>
 
       <h2 className="wrapped-title" style={{ fontSize: '3rem' }}>
@@ -42,7 +42,7 @@ const BiggestDaySlide = ({ biggestDay }) => {
 
       <div className="wrapped-divider" />
       <p className="wrapped-text">
-        Dä het sich richtig glohnt!
+        Zoogä!
       </p>
     </motion.div>
   );

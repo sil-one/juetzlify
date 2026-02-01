@@ -19,7 +19,7 @@ const FakeZungaSlide = () => {
       <div className="wrapped-label">Mal Zungä am Kaffee Zwätschgä verbrennt</div>
       <div className="wrapped-divider" />
       <p className="wrapped-text">
-        Heissä Kaffee u chaltä Morge - ä klassischi Kombo!
+        Negschmal Iistee Zwätschgä bstellä iär Bananä!
       </p>
     </motion.div>
   );

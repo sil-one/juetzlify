@@ -18,6 +18,24 @@ export const useAudioPlayer = (tracks = []) => {
       return [];
     }
   });
+  const [isShuffleOn, setIsShuffleOn] = useState(() => {
+    try {
+      const saved = localStorage.getItem('juetzlify-shuffle');
+      return saved === 'true';
+    } catch (error) {
+      console.error('Failed to load shuffle state from localStorage:', error);
+      return false;
+    }
+  });
+  const [isRepeatOn, setIsRepeatOn] = useState(() => {
+    try {
+      const saved = localStorage.getItem('juetzlify-repeat');
+      return saved === 'true';
+    } catch (error) {
+      console.error('Failed to load repeat state from localStorage:', error);
+      return false;
+    }
+  });
   const lastBackwardTimeRef = useRef(0);
   const playRecordedRef = useRef(false);
   const playTimerRef = useRef(null);
@@ -90,6 +108,24 @@ export const useAudioPlayer = (tracks = []) => {
       console.error('Failed to save queue to localStorage:', error);
     }
   }, [queue]);
+
+  // Save shuffle state to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('juetzlify-shuffle', isShuffleOn.toString());
+    } catch (error) {
+      console.error('Failed to save shuffle state to localStorage:', error);
+    }
+  }, [isShuffleOn]);
+
+  // Save repeat state to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('juetzlify-repeat', isRepeatOn.toString());
+    } catch (error) {
+      console.error('Failed to save repeat state to localStorage:', error);
+    }
+  }, [isRepeatOn]);
 
   // Play tracking: Record play after 15 seconds
   useEffect(() => {
@@ -170,18 +206,46 @@ export const useAudioPlayer = (tracks = []) => {
   const playNext = () => {
     // If there's a track in the queue, play it
     if (queue.length > 0) {
-      const nextTrack = queue[0];
-      setQueue(prev => prev.slice(1));
-      playTrack(nextTrack);
+      if (isShuffleOn) {
+        // Pick random track from queue
+        const randomIndex = Math.floor(Math.random() * queue.length);
+        const nextTrack = queue[randomIndex];
+        setQueue(prev => prev.filter((_, i) => i !== randomIndex));
+        playTrack(nextTrack);
+      } else {
+        // Play first track in queue
+        const nextTrack = queue[0];
+        setQueue(prev => prev.slice(1));
+        playTrack(nextTrack);
+      }
       return;
     }
 
     // Otherwise, play next in track list
-    if (!currentTrack || tracks.length === 0) return;
+    if (tracks.length === 0) return;
 
-    const currentIndex = tracks.findIndex(t => t.id === currentTrack.id);
-    if (currentIndex < tracks.length - 1) {
-      playTrack(tracks[currentIndex + 1]);
+    if (isShuffleOn) {
+      // Pick random track from tracks (excluding current)
+      const availableTracks = currentTrack
+        ? tracks.filter(t => t.id !== currentTrack.id)
+        : tracks;
+      if (availableTracks.length > 0) {
+        const randomTrack = availableTracks[Math.floor(Math.random() * availableTracks.length)];
+        playTrack(randomTrack);
+      }
+    } else {
+      // Play next track in order
+      if (!currentTrack) {
+        playTrack(tracks[0]);
+        return;
+      }
+      const currentIndex = tracks.findIndex(t => t.id === currentTrack.id);
+      const nextIndex = (currentIndex + 1) % tracks.length;
+
+      // Only play next if we're not at the end OR if repeat is on
+      if (currentIndex < tracks.length - 1 || isRepeatOn) {
+        playTrack(tracks[nextIndex]);
+      }
     }
   };
 
@@ -319,8 +383,24 @@ export const useAudioPlayer = (tracks = []) => {
     if ('mediaSession' in navigator) {
       navigator.mediaSession.playbackState = 'paused';
     }
-    // Auto-play next track
-    playNext();
+    // Auto-play next track (respects repeat mode in playNext logic)
+    if (queue.length > 0 || isRepeatOn || isShuffleOn) {
+      playNext();
+    } else {
+      // Normal behavior: play next track or stop at end
+      const currentIndex = tracks.findIndex(t => t.id === currentTrack?.id);
+      if (currentIndex < tracks.length - 1) {
+        playNext();
+      }
+    }
+  };
+
+  const toggleShuffle = () => {
+    setIsShuffleOn(prev => !prev);
+  };
+
+  const toggleRepeat = () => {
+    setIsRepeatOn(prev => !prev);
   };
 
   return {
@@ -331,6 +411,8 @@ export const useAudioPlayer = (tracks = []) => {
     duration,
     volume,
     queue,
+    isShuffleOn,
+    isRepeatOn,
     playTrack,
     togglePlay,
     seek,
@@ -341,6 +423,8 @@ export const useAudioPlayer = (tracks = []) => {
     removeFromQueue,
     clearQueue,
     reorderQueue,
+    toggleShuffle,
+    toggleRepeat,
     handleTimeUpdate,
     handleLoadedMetadata,
     handleEnded,

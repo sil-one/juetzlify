@@ -16,6 +16,10 @@ const AudioPlayer = ({
   onEnded,
   onPlayNext,
   onPlayPrevious,
+  isShuffleOn,
+  isRepeatOn,
+  onToggleShuffle,
+  onToggleRepeat,
 }) => {
   // Extract dominant color from current track's album art
   const { color: albumColor } = useColorExtractor(currentTrack?.albumArt);
@@ -109,60 +113,84 @@ const AudioPlayer = ({
               </div>
 
               {/* Play/Pause and Skip buttons */}
-              <div className="flex justify-center items-center gap-6">
-                {/* Previous button */}
+              <div className="flex justify-between items-center gap-3 w-full">
+                {/* Shuffle button */}
                 <button
-                  onClick={onPlayPrevious}
-                  className="secondary-button"
-                  title="Zrugg (oder z jetzigä niwstartä)"
+                  onClick={onToggleShuffle}
+                  className={`secondary-button w-10 h-10 flex items-center justify-center ${isShuffleOn ? 'shuffle-active' : ''}`}
+                  title="Shuffle"
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z" />
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" />
                   </svg>
                 </button>
 
-                {/* Play/Pause button with dynamic glow */}
-                <div className="relative">
-                  {/* Glow layer */}
-                  <div
-                    className={`absolute inset-0 rounded-full transition-all duration-500 ${isPlaying ? 'opacity-100' : 'opacity-0'}`}
-                    style={{
-                      background: playButtonGlow,
-                      filter: 'blur(16px)',
-                      transform: 'scale(1.3)',
-                      animation: isPlaying ? 'pulse-glow 2s ease-in-out infinite' : 'none',
-                    }}
-                  />
+                <div className="flex justify-center items-center gap-6">
+                  {/* Previous button */}
                   <button
-                    onClick={onTogglePlay}
-                    className="relative w-16 h-16 bg-sp-green hover:bg-sp-green-bright text-black rounded-full transition-all duration-300 hover:scale-105 active:scale-95 shadow-xl shadow-black/40 flex items-center justify-center"
-                    title={isPlaying ? 'Paisä' : 'Spielä'}
-                    style={{
-                      boxShadow: isPlaying
-                        ? `0 0 30px ${playButtonGlow}, 0 8px 20px rgba(0, 0, 0, 0.4)`
-                        : '0 8px 20px rgba(0, 0, 0, 0.4)',
-                    }}
+                    onClick={onPlayPrevious}
+                    className="secondary-button"
+                    title="Zrugg (oder z jetzigä niwstartä)"
                   >
-                    {isPlaying ? (
-                      <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                      </svg>
-                    ) : (
-                      <svg className="w-8 h-8 ml-1" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M6 4l15 8-15 8V4z" />
-                      </svg>
-                    )}
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z" />
+                    </svg>
+                  </button>
+
+                  {/* Play/Pause button with dynamic glow */}
+                  <div className="relative">
+                    {/* Glow layer */}
+                    <div
+                      className={`absolute inset-0 rounded-full transition-all duration-500 ${isPlaying ? 'opacity-100' : 'opacity-0'}`}
+                      style={{
+                        background: playButtonGlow,
+                        filter: 'blur(16px)',
+                        transform: 'scale(1.3)',
+                        animation: isPlaying ? 'pulse-glow 2s ease-in-out infinite' : 'none',
+                      }}
+                    />
+                    <button
+                      onClick={onTogglePlay}
+                      className="relative w-16 h-16 bg-sp-green hover:bg-sp-green-bright text-black rounded-full transition-all duration-300 hover:scale-105 active:scale-95 shadow-xl shadow-black/40 flex items-center justify-center"
+                      title={isPlaying ? 'Paisä' : 'Spielä'}
+                      style={{
+                        boxShadow: isPlaying
+                          ? `0 0 30px ${playButtonGlow}, 0 8px 20px rgba(0, 0, 0, 0.4)`
+                          : '0 8px 20px rgba(0, 0, 0, 0.4)',
+                      }}
+                    >
+                      {isPlaying ? (
+                        <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-8 h-8 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M6 4l15 8-15 8V4z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Next button */}
+                  <button
+                    onClick={onPlayNext}
+                    className="secondary-button"
+                    title="Negschts Liäd"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.798l-5.445-3.63z" />
+                    </svg>
                   </button>
                 </div>
 
-                {/* Next button */}
+                {/* Repeat button */}
                 <button
-                  onClick={onPlayNext}
-                  className="secondary-button"
-                  title="Negschts Liäd"
+                  onClick={onToggleRepeat}
+                  className={`secondary-button w-10 h-10 flex items-center justify-center ${isRepeatOn ? 'repeat-active' : ''}`}
+                  title="Repeat"
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.798l-5.445-3.63z" />
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
                   </svg>
                 </button>
               </div>

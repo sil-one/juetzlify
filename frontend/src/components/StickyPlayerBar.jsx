@@ -10,6 +10,10 @@ const StickyPlayerBar = ({
   onTogglePlay,
   onPlayNext,
   onPlayPrevious,
+  isShuffleOn,
+  isRepeatOn,
+  onToggleShuffle,
+  onToggleRepeat,
   isVisible = true,
 }) => {
   // Extract dominant color from current track's album art
@@ -91,6 +95,23 @@ const StickyPlayerBar = ({
 
         {/* Controls */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Shuffle button */}
+          <button
+            onClick={onToggleShuffle}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 hover:scale-105 ${
+              isShuffleOn ? 'text-white' : 'bg-sp-gray/50 text-sp-text-secondary hover:bg-sp-light-gray hover:text-sp-text'
+            }`}
+            style={isShuffleOn ? {
+              background: accentColor,
+              boxShadow: `0 4px 16px ${albumColor ? albumColor.vibrantRgba(0.5) : 'rgba(46, 204, 113, 0.4)'}`,
+            } : {}}
+            aria-label="Shuffle"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" />
+            </svg>
+          </button>
+
           {/* Previous button */}
           <button
             onClick={onPlayPrevious}
@@ -131,6 +152,23 @@ const StickyPlayerBar = ({
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
               <path d="M6 18V6l8.5 6zm10-12v12h2V6z" />
+            </svg>
+          </button>
+
+          {/* Repeat button */}
+          <button
+            onClick={onToggleRepeat}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 hover:scale-105 ${
+              isRepeatOn ? 'text-white' : 'bg-sp-gray/50 text-sp-text-secondary hover:bg-sp-light-gray hover:text-sp-text'
+            }`}
+            style={isRepeatOn ? {
+              background: accentColor,
+              boxShadow: `0 4px 16px ${albumColor ? albumColor.vibrantRgba(0.5) : 'rgba(46, 204, 113, 0.4)'}`,
+            } : {}}
+            aria-label="Repeat"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
             </svg>
           </button>
         </div>

@@ -31,7 +31,7 @@ const DailyBreakdownSlide = ({ playsByDay }) => {
         Plays pro Tag
       </div>
 
-      <div className="bar-chart">
+      <div className="bar-chart" style={{ maxWidth: '500px' }}>
         {sortedDays.map((day, index) => {
           const percentage = (day.plays / maxPlays) * 100;
 
@@ -41,9 +41,11 @@ const DailyBreakdownSlide = ({ playsByDay }) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: index * 0.1 }}
-              className="bar-item"
+              style={{ marginBottom: '1.25rem' }}
             >
-              <div className="bar-label">{day.name}</div>
+              <div className="bar-label" style={{ textAlign: 'left', marginBottom: '0.5rem', minWidth: 'auto' }}>
+                {day.name}
+              </div>
               <div className="bar-container">
                 <motion.div
                   initial={{ width: 0 }}

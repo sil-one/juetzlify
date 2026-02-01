@@ -8,6 +8,7 @@ import streamRouter from './routes/stream.js';
 import authRouter from './routes/auth.js';
 import adminRouter from './routes/admin.js';
 import wrappedRouter from './routes/wrapped.js';
+import bannerRouter from './routes/banner.js';
 import { getAllTracks } from './services/trackService.js';
 import { initializeBatchWriter } from './services/playStatisticsService.js';
 
@@ -31,6 +32,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/wrapped', wrappedRouter);
+app.use('/api/banner', bannerRouter);
 app.use('/api/tracks', tracksRouter);
 app.use('/api/stream', streamRouter);
 

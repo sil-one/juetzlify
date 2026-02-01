@@ -19,7 +19,7 @@ const FakeBeizSlide = () => {
       <div className="wrapped-label">Mal idr Beiz igschlafä</div>
       <div className="wrapped-divider" />
       <p className="wrapped-text">
-        Es isch eifach so gmiätlich gsi! Hoffentli hät niämert eppis gmerkt.
+        Es isch eifach so gmiätlich gsi! Diä 500 Meter bis is Bett hättsch ez wirkli niämerem chennä atuä.
       </p>
     </motion.div>
   );
