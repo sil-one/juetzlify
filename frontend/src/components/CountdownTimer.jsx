@@ -40,7 +40,7 @@ const CountdownTimer = () => {
 
   return (
     <div className="flex items-center gap-2 text-xs sm:text-sm text-sp-text-secondary">
-      <span className="text-sp-green">🎭</span>
+      <span className="text-sp-green">🎺🥁</span>
       <div className="flex items-center gap-1">
         <span className="text-sp-green font-semibold">{timeLeft.days}</span>
         <span>Täg</span>
