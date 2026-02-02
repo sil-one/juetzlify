@@ -25,7 +25,8 @@
       "Bash(docker run --rm juetzlify-test sh -c \"cd /app/backend && node_modules/.bin/pm2-runtime start ecosystem.config.js --env production\")",
       "Bash(docker run --rm juetzlify-test sh -c \"cd /app/backend && cat ecosystem.config.js | head -5\")",
       "Bash(docker run:*)",
-      "Bash(docker build:*)"
+      "Bash(docker build:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }

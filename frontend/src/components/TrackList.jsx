@@ -1,12 +1,14 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { getColorForImage } from '../hooks/useColorExtractor';
 import DownloadButton from './DownloadButton';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { useDownloads } from '../contexts/DownloadsContext';
 
 // Swipe threshold to trigger add to queue (in pixels)
 const SWIPE_THRESHOLD = 120;
 
 // Component for individual track item with dynamic color and swipe-to-queue
-const TrackItem = ({ track, isCurrentTrack, displayNumber, onTrackSelect, onAddToQueue, showAlbumArt, isAdmin = false }) => {
+const TrackItem = ({ track, isCurrentTrack, displayNumber, onTrackSelect, onAddToQueue, showAlbumArt, isAdmin = false, isAvailable = true }) => {
   const [glowColor, setGlowColor] = useState(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -129,21 +131,25 @@ const TrackItem = ({ track, isCurrentTrack, displayNumber, onTrackSelect, onAddT
       {/* Main track item content */}
       <div
         ref={itemRef}
-        onClick={() => !isSwiping && onTrackSelect(track)}
+        onClick={() => !isSwiping && isAvailable && onTrackSelect(track)}
         role="button"
-        tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && onTrackSelect(track)}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        className={`relative w-full text-left p-3 rounded-lg group cursor-pointer track-item-accent ${
+        tabIndex={isAvailable ? 0 : -1}
+        onKeyDown={(e) => e.key === 'Enter' && isAvailable && onTrackSelect(track)}
+        onTouchStart={isAvailable ? handleTouchStart : undefined}
+        onTouchMove={isAvailable ? handleTouchMove : undefined}
+        onTouchEnd={isAvailable ? handleTouchEnd : undefined}
+        className={`relative w-full text-left px-2 py-3 sm:p-3 rounded-lg group track-item-accent ${
           isCurrentTrack ? 'active' : ''
-        } ${isSwiping || swipeOffset > 0 ? '' : 'transition-all duration-300'}`}
+        } ${isSwiping || swipeOffset > 0 ? '' : 'transition-all duration-300'} ${
+          isAvailable ? 'cursor-pointer' : 'cursor-not-allowed'
+        }`}
         style={{
           '--accent-color': accentColor,
           background: isCurrentTrack ? glowRgba : 'rgba(24, 24, 24, 0.95)',
           transform: `translateX(-${swipeOffset}px)`,
           transition: isSwiping ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s',
+          opacity: isAvailable ? 1 : 0.4,
+          filter: isAvailable ? 'none' : 'grayscale(0.7)',
         }}
       >
       <div className="flex items-center gap-3 md:gap-4">
@@ -222,6 +228,13 @@ const TrackItem = ({ track, isCurrentTrack, displayNumber, onTrackSelect, onAddT
 
         {/* Download button and duration */}
         <div className="flex items-center gap-2 md:gap-3">
+          {!isAvailable && (
+            <div className="flex items-center gap-1 text-orange-400 text-xs" title="Abälade für Offline">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </div>
+          )}
           <DownloadButton
             trackId={track.id}
             track={track}
@@ -281,6 +294,9 @@ const TrackItem = ({ track, isCurrentTrack, displayNumber, onTrackSelect, onAddT
 };
 
 const TrackList = ({ tracks, currentTrack, onTrackSelect, onAddToQueue, isAdmin = false }) => {
+  const isOnline = useOnlineStatus();
+  const { getDownloadState } = useDownloads();
+
   // Group tracks by album
   const groupedTracks = useMemo(() => {
     if (!tracks || tracks.length === 0) return [];
@@ -344,7 +360,7 @@ const TrackList = ({ tracks, currentTrack, onTrackSelect, onAddToQueue, isAdmin 
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-4 pb-24">
+    <div className="w-full max-w-2xl mx-auto px-2 sm:px-4 pb-24">
       <h2 className="text-2xl font-bold mb-6 text-sp-text">Liäder</h2>
 
       <div className="space-y-8">
@@ -356,6 +372,8 @@ const TrackList = ({ tracks, currentTrack, onTrackSelect, onAddToQueue, isAdmin 
             onTrackSelect={onTrackSelect}
             onAddToQueue={onAddToQueue}
             isAdmin={isAdmin}
+            isOnline={isOnline}
+            getDownloadState={getDownloadState}
           />
         ))}
       </div>
@@ -364,7 +382,7 @@ const TrackList = ({ tracks, currentTrack, onTrackSelect, onAddToQueue, isAdmin 
 };
 
 // Album group component with dynamic color
-const AlbumGroup = ({ group, currentTrack, onTrackSelect, onAddToQueue, isAdmin = false }) => {
+const AlbumGroup = ({ group, currentTrack, onTrackSelect, onAddToQueue, isAdmin = false, isOnline, getDownloadState }) => {
   const [glowColor, setGlowColor] = useState(null);
 
   useEffect(() => {
@@ -379,7 +397,7 @@ const AlbumGroup = ({ group, currentTrack, onTrackSelect, onAddToQueue, isAdmin 
 
   return (
     <div
-      className="glass rounded-xl px-3 py-4 md:px-4 transition-all duration-300 hover:elevation-1"
+      className="glass rounded-xl px-2 py-4 sm:px-3 md:px-4 transition-all duration-300 hover:elevation-1"
       style={{
         background: `linear-gradient(135deg, ${glowRgba} 0%, rgba(24, 24, 24, 0.7) 100%)`,
       }}
@@ -442,6 +460,9 @@ const AlbumGroup = ({ group, currentTrack, onTrackSelect, onAddToQueue, isAdmin 
           const isCurrentTrack = currentTrack?.id === track.id;
           // Always use sequential numbering within the album, not the metadata track number
           const displayNumber = trackIndex + 1;
+          // Track is available if online OR downloaded
+          const isDownloaded = getDownloadState(track.id) === 'downloaded';
+          const isAvailable = isOnline || isDownloaded;
 
           return (
             <TrackItem
@@ -453,6 +474,7 @@ const AlbumGroup = ({ group, currentTrack, onTrackSelect, onAddToQueue, isAdmin 
               onAddToQueue={onAddToQueue}
               showAlbumArt={!group.name}
               isAdmin={isAdmin}
+              isAvailable={isAvailable}
             />
           );
         })}

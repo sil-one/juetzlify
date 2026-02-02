@@ -5,6 +5,7 @@
 
 export const FEATURED_SHOWS = [
   { filename: 'blutt.jpg', alt: 'Blutt Podcast' },
+  { filename: 'cyril.png', alt: 'Cyril Podcast' },
   { filename: 'herr-merz.jpg', alt: 'Herr Merz Podcast' },
   { filename: 'meier.jpg', alt: 'Meier Podcast' },
   { filename: 'nono.png', alt: 'NoNo Podcast' },

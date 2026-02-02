@@ -6,10 +6,10 @@
  * - Caches API responses for offline data access
  */
 
-const CACHE_VERSION = 2;
-const AUDIO_CACHE = 'juetzlify-audio-v2';
-const APP_SHELL_CACHE = 'juetzlify-app-shell-v2';
-const API_CACHE = 'juetzlify-api-v2';
+const CACHE_VERSION = 4;
+const AUDIO_CACHE = 'juetzlify-audio-v4';
+const APP_SHELL_CACHE = 'juetzlify-app-shell-v4';
+const API_CACHE = 'juetzlify-api-v4';
 
 // For backwards compatibility
 const CACHE_NAME = AUDIO_CACHE;
@@ -41,6 +41,10 @@ const APP_SHELL_FILES = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/juetzlify_logo.png',
+  '/juetzlify_offline.png',
+  '/icon-192.png',
+  '/icon-512.png',
   // Note: Vite build outputs with hashed filenames will be cached dynamically
 ];
 
@@ -53,12 +57,21 @@ self.addEventListener('install', (event) => {
   console.log(`[Jützlify SW] Platform: ${platform}, Max cached tracks: ${MAX_CACHED_TRACKS}`);
 
   event.waitUntil(
-    caches.open(APP_SHELL_CACHE).then((cache) => {
+    caches.open(APP_SHELL_CACHE).then(async (cache) => {
       console.log('[Jützlify SW] Pre-caching app shell');
-      return cache.addAll(APP_SHELL_FILES).catch((error) => {
-        console.warn('[Jützlify SW] Failed to pre-cache some files:', error);
-        // Don't fail installation if pre-caching fails
+
+      // Cache files individually to see which ones fail
+      const cachePromises = APP_SHELL_FILES.map(async (url) => {
+        try {
+          await cache.add(url);
+          console.log(`[Jützlify SW] Cached: ${url}`);
+        } catch (error) {
+          console.error(`[Jützlify SW] Failed to cache ${url}:`, error);
+        }
       });
+
+      await Promise.all(cachePromises);
+      console.log('[Jützlify SW] App shell caching complete');
     }).then(() => {
       // Skip waiting to activate immediately
       return self.skipWaiting();

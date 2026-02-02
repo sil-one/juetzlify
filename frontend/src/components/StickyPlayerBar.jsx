@@ -95,10 +95,10 @@ const StickyPlayerBar = ({
 
         {/* Controls */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Shuffle button */}
+          {/* Shuffle button - hidden on mobile, shown on larger screens */}
           <button
             onClick={onToggleShuffle}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 hover:scale-105 ${
+            className={`hidden sm:flex w-8 h-8 rounded-full items-center justify-center transition-all duration-200 active:scale-90 hover:scale-105 ${
               isShuffleOn ? 'text-white' : 'bg-sp-gray/50 text-sp-text-secondary hover:bg-sp-light-gray hover:text-sp-text'
             }`}
             style={isShuffleOn ? {
@@ -155,10 +155,10 @@ const StickyPlayerBar = ({
             </svg>
           </button>
 
-          {/* Repeat button */}
+          {/* Repeat button - hidden on mobile, shown on larger screens */}
           <button
             onClick={onToggleRepeat}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 hover:scale-105 ${
+            className={`hidden sm:flex w-8 h-8 rounded-full items-center justify-center transition-all duration-200 active:scale-90 hover:scale-105 ${
               isRepeatOn ? 'text-white' : 'bg-sp-gray/50 text-sp-text-secondary hover:bg-sp-light-gray hover:text-sp-text'
             }`}
             style={isRepeatOn ? {

@@ -176,7 +176,8 @@ export async function verifyDownloadIntegrity(trackId) {
     }
 
     // Check if track exists in Service Worker cache
-    const cache = await caches.open('juetzlify-audio-v1');
+    // Match the cache name from audio-cache-sw.js
+    const cache = await caches.open('juetzlify-audio-v3');
     const cached = await cache.match(`/api/stream/${trackId}`);
 
     if (!cached) {
