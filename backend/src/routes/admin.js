@@ -8,9 +8,9 @@ import {
   removeTrackVisibility,
   Visibility,
 } from '../services/visibilityService.js';
-import { getAllTracks, refreshCache } from '../services/trackService.js';
-import { clearVisibilityCache } from '../services/visibilityService.js';
+import { getAllTracks } from '../services/trackService.js';
 import { deleteAlbumArtCache, clearAllAlbumArtCache } from '../services/albumArtService.js';
+import { invalidateAllCaches } from '../services/cacheInvalidationService.js';
 import {
   getAllTrackPlayCounts,
   getOverallStatistics,
@@ -88,9 +88,8 @@ router.post('/upload', upload.array('tracks', 10), async (req, res) => {
       });
     }
 
-    // Clear caches to reload with new tracks
-    clearVisibilityCache();
-    refreshCache();
+    // Invalidate caches across all workers
+    await invalidateAllCaches();
 
     res.json({
       success: true,
@@ -113,16 +112,15 @@ router.post('/upload', upload.array('tracks', 10), async (req, res) => {
  */
 router.post('/refresh', async (req, res) => {
   try {
-    // Clear all caches
-    clearVisibilityCache();
-    refreshCache();
-
     // Clear album art cache so it gets regenerated
     const artResult = await clearAllAlbumArtCache();
 
+    // Invalidate caches across all workers
+    await invalidateAllCaches();
+
     res.json({
       success: true,
-      message: 'All caches cleared. Metadata will be reloaded on next request.',
+      message: 'All caches cleared across all workers. Metadata will be reloaded on next request.',
       albumArtCleared: artResult.deletedCount,
     });
   } catch (error) {
@@ -143,10 +141,9 @@ router.post('/migrate', async (req, res) => {
   try {
     const result = await migrateTracks();
 
-    // Clear caches to reload with new structure
+    // Invalidate caches across all workers
     if (result.success) {
-      clearVisibilityCache();
-      refreshCache();
+      await invalidateAllCaches();
     }
 
     res.json(result);
@@ -200,9 +197,8 @@ router.put('/tracks/:filename/visibility', async (req, res) => {
 
     const result = await setTrackVisibility(filename, visibility);
 
-    // Clear caches to reload with new visibility
-    clearVisibilityCache();
-    refreshCache();
+    // Invalidate caches across all workers
+    await invalidateAllCaches();
 
     res.json({
       success: true,
@@ -248,9 +244,8 @@ router.delete('/tracks/:filename', async (req, res) => {
     // 3. Delete album art cache
     await deleteAlbumArtCache(decodedFilename);
 
-    // 4. Clear caches to reload
-    clearVisibilityCache();
-    refreshCache();
+    // 4. Invalidate caches across all workers
+    await invalidateAllCaches();
 
     res.json({
       success: true,

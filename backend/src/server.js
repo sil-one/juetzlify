@@ -11,6 +11,7 @@ import wrappedRouter from './routes/wrapped.js';
 import bannerRouter from './routes/banner.js';
 import { getAllTracks } from './services/trackService.js';
 import { initializeBatchWriter } from './services/playStatisticsService.js';
+import { initializeCacheInvalidation } from './services/cacheInvalidationService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,6 +65,9 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`Environment: ${config.nodeEnv}`);
   console.log(`Tracks path: ${config.tracksPath}`);
   console.log(`Cache path: ${config.cachePath}\n`);
+
+  // Initialize cache invalidation watcher (for PM2 cluster sync)
+  await initializeCacheInvalidation();
 
   // Initialize batch writer for statistics (1s interval for PM2 cluster sync)
   initializeBatchWriter(1000);

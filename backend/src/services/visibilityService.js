@@ -3,6 +3,7 @@ import fsSync from 'fs';
 import path from 'path';
 import lockfile from 'proper-lockfile';
 import { config } from '../config/config.js';
+import { onCacheInvalidation } from './cacheInvalidationService.js';
 
 const METADATA_FILE = path.join(config.dataPath, 'track-visibility.json');
 const METADATA_TMP = METADATA_FILE + '.tmp';
@@ -14,6 +15,12 @@ const NEW_ALL_DIR = path.join(config.tracksPath, 'all');
 let visibilityCache = null;
 let migrationCompleted = false;
 let visibilityWatcher = null;
+
+// Register for cross-worker cache invalidation
+onCacheInvalidation(() => {
+  console.log('[VisibilityService] Cache invalidated by another worker');
+  visibilityCache = null;
+});
 
 /**
  * Initialize file watcher for track-visibility.json

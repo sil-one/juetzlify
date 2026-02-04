@@ -4,6 +4,7 @@ import path from 'path';
 import { extractMetadata } from './metadataService.js';
 import { config } from '../config/config.js';
 import { getTrackVisibility, Visibility } from './visibilityService.js';
+import { onCacheInvalidation } from './cacheInvalidationService.js';
 
 const ALL_TRACKS_DIR = path.join(config.tracksPath, 'all');
 
@@ -12,6 +13,12 @@ let tracksCache = null;
 
 // File watcher for track visibility changes
 let watcher = null;
+
+// Register for cross-worker cache invalidation
+onCacheInvalidation(() => {
+  console.log('[TrackService] Cache invalidated by another worker');
+  tracksCache = null;
+});
 
 /**
  * Initialize file watcher for track-visibility.json
