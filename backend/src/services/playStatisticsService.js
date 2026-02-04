@@ -554,3 +554,100 @@ export async function stopBatchWriter() {
   await flushPendingPlays();
   console.log('Batch writer stopped');
 }
+
+/**
+ * Get recent plays (sorted by timestamp descending)
+ */
+export async function getRecentPlays(limit = 50) {
+  const statistics = await getStatistics();
+
+  // Sort plays by timestamp descending and return top N
+  return statistics.plays
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    .slice(0, limit);
+}
+
+/**
+ * Get hottest tracks within a time window
+ */
+export async function getHottestTracks(hoursAgo = 24) {
+  const statistics = await getStatistics();
+  const cutoffTime = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
+
+  // Filter plays within time window
+  const recentPlays = statistics.plays.filter((play) => {
+    return new Date(play.timestamp) >= cutoffTime;
+  });
+
+  // Aggregate plays per track
+  const trackCounts = {};
+  const trackMetadata = {};
+
+  recentPlays.forEach((play) => {
+    trackCounts[play.filename] = (trackCounts[play.filename] || 0) + 1;
+    // Store metadata from first occurrence
+    if (!trackMetadata[play.filename]) {
+      trackMetadata[play.filename] = {
+        trackId: play.trackId,
+        title: play.title,
+        artist: play.artist,
+        album: play.album,
+      };
+    }
+  });
+
+  // Return top 10 tracks with metadata
+  return Object.entries(trackCounts)
+    .map(([filename, count]) => ({
+      trackId: trackMetadata[filename].trackId,
+      filename,
+      title: trackMetadata[filename].title,
+      artist: trackMetadata[filename].artist,
+      album: trackMetadata[filename].album,
+      count,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+}
+
+/**
+ * Get plays timeline (hourly buckets)
+ */
+export async function getPlaysTimeline(hoursAgo = 24) {
+  const statistics = await getStatistics();
+  const now = new Date();
+  const cutoffTime = new Date(now.getTime() - hoursAgo * 60 * 60 * 1000);
+
+  // Filter plays within time window
+  const recentPlays = statistics.plays.filter((play) => {
+    return new Date(play.timestamp) >= cutoffTime;
+  });
+
+  // Create hourly buckets
+  const buckets = [];
+  for (let i = hoursAgo - 1; i >= 0; i--) {
+    const bucketTime = new Date(now.getTime() - i * 60 * 60 * 1000);
+    const hour = bucketTime.getHours();
+    const label = `${hour.toString().padStart(2, '0')}:00`;
+
+    buckets.push({
+      hour,
+      time: bucketTime.toISOString(),
+      label,
+      plays: 0,
+    });
+  }
+
+  // Fill buckets with play counts
+  recentPlays.forEach((play) => {
+    const playTime = new Date(play.timestamp);
+    const hoursDiff = Math.floor((now - playTime) / (60 * 60 * 1000));
+    const bucketIndex = hoursAgo - 1 - hoursDiff;
+
+    if (bucketIndex >= 0 && bucketIndex < buckets.length) {
+      buckets[bucketIndex].plays++;
+    }
+  });
+
+  return buckets;
+}

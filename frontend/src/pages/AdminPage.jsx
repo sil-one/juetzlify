@@ -435,6 +435,21 @@ const AdminPage = () => {
           </div>
         </div>
 
+        {/* Activity Statistics Button */}
+        <div className="mb-8">
+          <a
+            href="/admin/activity"
+            className="block w-full sm:w-auto sm:inline-block px-6 py-4 bg-sp-green hover:bg-[#27ae60] text-sp-black font-bold rounded-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-sp-green/50 text-center"
+          >
+            <div className="flex items-center justify-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <span>Activity Statistics</span>
+            </div>
+          </a>
+        </div>
+
         {/* Wrapped Pages */}
         <div className="bg-sp-dark rounded-lg p-6 mb-8">
           <h2 className="text-2xl font-bold mb-4">Wrapped Pages</h2>

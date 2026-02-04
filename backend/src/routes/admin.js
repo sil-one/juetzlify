@@ -15,6 +15,9 @@ import {
   getAllTrackPlayCounts,
   getOverallStatistics,
   getCarnivalStatistics,
+  getRecentPlays,
+  getHottestTracks,
+  getPlaysTimeline,
 } from '../services/playStatisticsService.js';
 import {
   getWrappedStatus,
@@ -441,6 +444,75 @@ router.post('/podcast-ads/enable', async (req, res) => {
       success: false,
       error: 'Failed to set podcast ads status',
       message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/admin/statistics/recent-plays
+ * Get recent plays (sorted by timestamp descending)
+ */
+router.get('/statistics/recent-plays', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const plays = await getRecentPlays(limit);
+
+    res.json({
+      success: true,
+      plays,
+      count: plays.length,
+    });
+  } catch (error) {
+    console.error('Error fetching recent plays:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch recent plays',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/statistics/hottest
+ * Get hottest tracks within a time window
+ */
+router.get('/statistics/hottest', async (req, res) => {
+  try {
+    const hours = parseInt(req.query.hours) || 24;
+    const tracks = await getHottestTracks(hours);
+
+    res.json({
+      success: true,
+      tracks,
+      count: tracks.length,
+    });
+  } catch (error) {
+    console.error('Error fetching hottest tracks:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch hottest tracks',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/statistics/timeline
+ * Get plays timeline (hourly buckets)
+ */
+router.get('/statistics/timeline', async (req, res) => {
+  try {
+    const hours = parseInt(req.query.hours) || 24;
+    const timeline = await getPlaysTimeline(hours);
+
+    res.json({
+      success: true,
+      timeline,
+      hours,
+    });
+  } catch (error) {
+    console.error('Error fetching plays timeline:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch plays timeline',
     });
   }
 });
