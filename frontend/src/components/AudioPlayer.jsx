@@ -46,7 +46,7 @@ const AudioPlayer = ({
 
   return (
     <div
-      className="flex flex-col items-center justify-center min-h-screen text-sp-text p-4 relative overflow-hidden"
+      className="flex flex-col items-center justify-start pt-8 md:justify-center md:pt-0 min-h-screen text-sp-text p-4 relative overflow-hidden"
     >
       {/* Dynamic gradient background */}
       {currentTrack && (
@@ -84,7 +84,7 @@ const AudioPlayer = ({
             />
 
             {/* Player controls */}
-            <div className="w-full max-w-md mt-6">
+            <div className="w-full max-w-md mt-2 md:mt-6">
               {/* Progress bar */}
               <div className="group relative">
                 <input
@@ -109,7 +109,7 @@ const AudioPlayer = ({
               </div>
 
               {/* Time display */}
-              <div className="flex justify-between text-xs text-sp-text-muted mt-1 mb-6">
+              <div className="flex justify-between text-xs text-sp-text-muted mt-1 mb-3 md:mb-6">
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
@@ -198,7 +198,7 @@ const AudioPlayer = ({
               </div>
 
               {/* Download button row */}
-              <div className="flex justify-center items-center mt-4">
+              <div className="flex justify-center items-center mt-2 md:mt-4">
                 <DownloadButton
                   trackId={currentTrack.id}
                   track={currentTrack}

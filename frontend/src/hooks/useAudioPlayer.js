@@ -137,6 +137,44 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
     }
   }, [isOnline, syncOfflinePlays]);
 
+  // Keyboard shortcut: spacebar to play/pause
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Only handle spacebar
+      if (e.code !== 'Space' && e.key !== ' ') return;
+
+      // Don't trigger if user is typing in an input field
+      const tagName = e.target.tagName.toLowerCase();
+      if (tagName === 'input' || tagName === 'textarea' || e.target.isContentEditable) {
+        return;
+      }
+
+      // Prevent default scrolling behavior
+      e.preventDefault();
+
+      // Toggle play/pause
+      if (audioRef.current && currentTrack) {
+        if (isPlaying) {
+          audioRef.current.pause();
+          if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused';
+          }
+        } else {
+          audioRef.current.play().catch(error => {
+            console.error('Playback error:', error);
+          });
+          if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'playing';
+          }
+        }
+        setIsPlaying(!isPlaying);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPlaying, currentTrack]);
+
   // Play tracking: Record play after 15 seconds
   useEffect(() => {
     // Clear any existing timer

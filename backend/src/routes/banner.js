@@ -39,9 +39,24 @@ router.get('/version', async (req, res) => {
 // Update banner version (admin only)
 router.post('/version', async (req, res) => {
   try {
-    const { token } = req.body;
+    // Check Authorization header first, then body for backwards compatibility
+    const authHeader = req.headers.authorization;
+    let token = null;
 
-    // Verify admin token (reuse existing auth logic)
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    } else if (req.body && req.body.token) {
+      token = req.body.token;
+    }
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+      });
+    }
+
+    // Verify admin token
     const jwt = await import('jsonwebtoken');
     let decoded;
     try {

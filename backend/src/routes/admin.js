@@ -5,10 +5,12 @@ import fs from 'fs/promises';
 import {
   migrateTracks,
   setTrackVisibility,
+  removeTrackVisibility,
   Visibility,
 } from '../services/visibilityService.js';
 import { getAllTracks, refreshCache } from '../services/trackService.js';
 import { clearVisibilityCache } from '../services/visibilityService.js';
+import { deleteAlbumArtCache, clearAllAlbumArtCache } from '../services/albumArtService.js';
 import {
   getAllTrackPlayCounts,
   getOverallStatistics,
@@ -21,8 +23,12 @@ import {
   setPodcastAdsEnabled,
 } from '../services/settingsService.js';
 import { config } from '../config/config.js';
+import { requireAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+// Apply admin authentication to all routes in this router
+router.use(requireAdmin);
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -96,6 +102,34 @@ router.post('/upload', upload.array('tracks', 10), async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Upload failed',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/admin/refresh
+ * Force refresh all metadata and clear album art cache
+ */
+router.post('/refresh', async (req, res) => {
+  try {
+    // Clear all caches
+    clearVisibilityCache();
+    refreshCache();
+
+    // Clear album art cache so it gets regenerated
+    const artResult = await clearAllAlbumArtCache();
+
+    res.json({
+      success: true,
+      message: 'All caches cleared. Metadata will be reloaded on next request.',
+      albumArtCleared: artResult.deletedCount,
+    });
+  } catch (error) {
+    console.error('Error refreshing metadata:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to refresh metadata',
       message: error.message,
     });
   }
@@ -180,6 +214,54 @@ router.put('/tracks/:filename/visibility', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to update track visibility',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * DELETE /api/admin/tracks/:filename
+ * Delete a track completely (file, visibility, album art cache)
+ */
+router.delete('/tracks/:filename', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const decodedFilename = decodeURIComponent(filename);
+
+    // 1. Delete the MP3 file
+    const filePath = path.join(config.tracksPath, 'all', decodedFilename);
+    try {
+      await fs.unlink(filePath);
+      console.log(`Deleted track file: ${decodedFilename}`);
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        // File doesn't exist, continue with cleanup
+        console.log(`Track file not found (already deleted?): ${decodedFilename}`);
+      } else {
+        throw error;
+      }
+    }
+
+    // 2. Remove visibility entry
+    await removeTrackVisibility(decodedFilename);
+
+    // 3. Delete album art cache
+    await deleteAlbumArtCache(decodedFilename);
+
+    // 4. Clear caches to reload
+    clearVisibilityCache();
+    refreshCache();
+
+    res.json({
+      success: true,
+      message: `Track "${decodedFilename}" deleted successfully`,
+      filename: decodedFilename,
+    });
+  } catch (error) {
+    console.error('Error deleting track:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete track',
       message: error.message,
     });
   }

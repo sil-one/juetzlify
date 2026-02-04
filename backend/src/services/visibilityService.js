@@ -383,3 +383,76 @@ export async function getAllTracksWithVisibility() {
 export function clearVisibilityCache() {
   visibilityCache = null;
 }
+
+/**
+ * Remove visibility entry for a deleted track
+ */
+export async function removeTrackVisibility(filename) {
+  let release = null;
+
+  try {
+    await ensureDataDir();
+
+    // Check if file exists
+    try {
+      await fs.access(METADATA_FILE);
+    } catch {
+      // No metadata file, nothing to remove
+      return { success: true, filename };
+    }
+
+    // Acquire lock BEFORE reading
+    release = await lockfile.lock(METADATA_FILE, {
+      retries: {
+        retries: 100,
+        minTimeout: 100,
+        maxTimeout: 500,
+      },
+      stale: 10000,
+    });
+
+    console.log(`[Visibility] Lock acquired for removing ${filename}...`);
+
+    // Read latest data with lock held
+    const data = await fs.readFile(METADATA_FILE, 'utf-8');
+    const metadata = JSON.parse(data);
+
+    // Remove the entry
+    if (metadata.tracks[filename]) {
+      delete metadata.tracks[filename];
+    }
+
+    // Write to temp file
+    await fs.writeFile(METADATA_TMP, JSON.stringify(metadata, null, 2), 'utf-8');
+
+    // Atomic rename
+    await fs.rename(METADATA_TMP, METADATA_FILE);
+
+    // Clear cache
+    visibilityCache = null;
+
+    console.log(`[Visibility] Removed entry for ${filename}`);
+
+    return { success: true, filename };
+  } catch (error) {
+    console.error('Error removing track visibility:', error.message);
+
+    // Clean up temp file
+    try {
+      await fs.unlink(METADATA_TMP);
+    } catch {
+      // Ignore
+    }
+
+    throw error;
+  } finally {
+    if (release) {
+      try {
+        await release();
+        console.log('[Visibility] Lock released');
+      } catch (error) {
+        console.error('[Visibility] Error releasing lock:', error.message);
+      }
+    }
+  }
+}

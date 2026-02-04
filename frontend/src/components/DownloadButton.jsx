@@ -146,21 +146,21 @@ const DownloadButton = ({ trackId, track, size = 'small', className = '', showLa
 
   const getTitle = () => {
     if (!isOnline && state === 'not_downloaded') {
-      return 'Bisch offline, chan nöd abäladä';
+      return 'Bisch offline, chasch nid abbäladä';
     }
     if (state === 'downloading') {
-      return `Abäladä... ${Math.round(progress * 100)}%`;
+      return `Abbäladä... ${Math.round(progress * 100)}%`;
     }
     if (state === 'downloaded' && showDeleteConfirm) {
-      return 'Nochmal druckä zum löschä';
+      return 'Numal drickä zum leschä';
     }
     if (state === 'downloaded') {
-      return 'Abäladä - druckä zum löschä';
+      return 'Abbäladä - drickä zum leschä';
     }
     if (state === 'failed') {
-      return 'Fähler - nochmal versuchä';
+      return 'Fähler - probiär numal';
     }
-    return 'Abäladä für offline';
+    return 'Abbäladä für offline';
   };
 
   const isDisabled = (!isOnline && state === 'not_downloaded') || state === 'downloading';

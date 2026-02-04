@@ -3,7 +3,7 @@ import MarqueeText from './MarqueeText';
 
 const TrackInfo = ({ title, artist, album, trackNo, trackTotal }) => {
   return (
-    <div className="text-center mb-4 px-4 max-w-md w-full">
+    <div className="text-center mb-2 md:mb-4 px-4 max-w-md w-full">
       <MarqueeText
         text={title}
         className="text-2xl md:text-3xl font-bold mb-2 text-sp-text"

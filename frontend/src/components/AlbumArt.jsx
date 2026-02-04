@@ -7,7 +7,7 @@ const AlbumArt = ({ src, alt = 'Album Art', glowColor = null }) => {
   const softGlow = glowColor ? glowColor.vibrantRgba(0.25) : 'rgba(46, 204, 113, 0.2)';
 
   return (
-    <div className="w-full max-w-sm aspect-square mb-8 px-4">
+    <div className="w-full max-w-sm aspect-square mb-3 md:mb-8 px-4">
       <div
         className="relative w-full h-full rounded-lg album-art-glow smooth-transition"
         style={{

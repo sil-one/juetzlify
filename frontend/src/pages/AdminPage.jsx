@@ -21,6 +21,16 @@ const AdminPage = () => {
   const [podcastAdsStatus, setPodcastAdsStatus] = useState({ public: true, private: true });
   const [bannerVersion, setBannerVersion] = useState(1);
   const [isBumping, setIsBumping] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Get auth headers for API requests
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('juetzlify-token');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : '',
+    };
+  };
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -37,6 +47,7 @@ const AdminPage = () => {
       // Trigger migration
       const migrateResponse = await fetch(`${API_BASE_URL}/admin/migrate`, {
         method: 'POST',
+        headers: getAuthHeaders(),
       });
       const migrateData = await migrateResponse.json();
 
@@ -61,8 +72,8 @@ const AdminPage = () => {
 
       // Fetch tracks and play counts in parallel
       const [tracksResponse, playCountsResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/admin/tracks`),
-        fetch(`${API_BASE_URL}/admin/statistics/play-counts`),
+        fetch(`${API_BASE_URL}/admin/tracks`, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE_URL}/admin/statistics/play-counts`, { headers: getAuthHeaders() }),
       ]);
 
       const tracksData = await tracksResponse.json();
@@ -92,9 +103,7 @@ const AdminPage = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/admin/tracks/${encodeURIComponent(filename)}/visibility`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ visibility }),
       });
 
@@ -118,7 +127,7 @@ const AdminPage = () => {
 
   const fetchWrappedStatus = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/wrapped/status`);
+      const response = await fetch(`${API_BASE_URL}/admin/wrapped/status`, { headers: getAuthHeaders() });
       const data = await response.json();
 
       if (data.success) {
@@ -134,9 +143,7 @@ const AdminPage = () => {
       const newValue = !wrappedStatus[type];
       const response = await fetch(`${API_BASE_URL}/admin/wrapped/enable`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ type, enabled: newValue }),
       });
 
@@ -155,7 +162,7 @@ const AdminPage = () => {
 
   const fetchPodcastAdsStatus = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/podcast-ads/status`);
+      const response = await fetch(`${API_BASE_URL}/admin/podcast-ads/status`, { headers: getAuthHeaders() });
       const data = await response.json();
 
       if (data.success) {
@@ -171,9 +178,7 @@ const AdminPage = () => {
       const newValue = !podcastAdsStatus[type];
       const response = await fetch(`${API_BASE_URL}/admin/podcast-ads/enable`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ type, enabled: newValue }),
       });
 
@@ -192,7 +197,7 @@ const AdminPage = () => {
 
   const fetchBannerVersion = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/banner/version`);
+      const response = await fetch(`${API_BASE_URL}/banner/version`, { headers: getAuthHeaders() });
       const data = await response.json();
 
       if (data.success) {
@@ -206,13 +211,9 @@ const AdminPage = () => {
   const bumpBannerVersion = async () => {
     try {
       setIsBumping(true);
-      const token = localStorage.getItem('adminToken');
       const response = await fetch(`${API_BASE_URL}/banner/version`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token }),
+        headers: getAuthHeaders(),
       });
 
       const data = await response.json();
@@ -240,6 +241,62 @@ const AdminPage = () => {
     }
   };
 
+  const deleteTrack = async (filename, title) => {
+    const confirmMessage = `Are you sure you want to delete "${title || filename}"?\n\nThis will remove:\n- The MP3 file\n- The visibility setting\n- The album art cache`;
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/tracks/${encodeURIComponent(filename)}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Remove from local state
+        setTracks(tracks.filter(track => track.filename !== filename));
+        alert(`Track "${title || filename}" deleted successfully!`);
+      } else {
+        alert(`Error deleting: ${data.error}`);
+      }
+    } catch (err) {
+      console.error('Error deleting track:', err);
+      alert('Error deleting track');
+    }
+  };
+
+  const refreshMetadata = async () => {
+    if (!window.confirm('Are you sure? This will clear all caches and reload all metadata from files.')) {
+      return;
+    }
+
+    try {
+      setIsRefreshing(true);
+      const response = await fetch(`${API_BASE_URL}/admin/refresh`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`Metadata refreshed successfully!\n\nAlbum art cache cleared: ${data.albumArtCleared} images`);
+        // Reload tracks to show fresh data
+        await fetchTracks();
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (err) {
+      console.error('Error refreshing metadata:', err);
+      alert('Error refreshing metadata');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const handleFileUpload = async (files) => {
     if (!files || files.length === 0) return;
 
@@ -262,8 +319,12 @@ const AdminPage = () => {
       setIsUploading(true);
       setUploadProgress(`Uploading ${mp3Files.length} track(s)...`);
 
+      const token = localStorage.getItem('juetzlify-token');
       const response = await fetch(`${API_BASE_URL}/admin/upload`, {
         method: 'POST',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
         body: formData,
       });
 
@@ -619,17 +680,30 @@ const AdminPage = () => {
         <div className="bg-sp-dark rounded-lg p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <h2 className="text-2xl font-bold">Tracks ({tracks.length})</h2>
-            <button
-              onClick={fetchTracks}
-              disabled={isLoading}
-              className="px-4 py-2 bg-sp-gray hover:bg-sp-light-gray rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full sm:w-auto"
-              title="Refresh play counts"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Refresh
-            </button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button
+                onClick={fetchTracks}
+                disabled={isLoading}
+                className="px-4 py-2 bg-sp-gray hover:bg-sp-light-gray rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 flex-1 sm:flex-initial"
+                title="Refresh play counts"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+              </button>
+              <button
+                onClick={refreshMetadata}
+                disabled={isRefreshing}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 flex-1 sm:flex-initial"
+                title="Clear all caches and reload metadata from files"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                {isRefreshing ? 'Loading...' : 'Reload metadata'}
+              </button>
+            </div>
           </div>
 
           {/* Slider Legend */}
@@ -686,6 +760,17 @@ const AdminPage = () => {
                         onChange={(visibility) => updateTrackVisibility(track.filename, visibility)}
                       />
                     </div>
+
+                    {/* Delete Button */}
+                    <button
+                      onClick={() => deleteTrack(track.filename, track.title)}
+                      className="p-2 text-sp-text-muted hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                      title="Delete track"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               </div>

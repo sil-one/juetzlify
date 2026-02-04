@@ -54,7 +54,7 @@ const OfflineIndicator = () => {
           />
         </svg>
         <span className="drop-shadow-md">
-          Offline-Modus • Nur abegladeni Liäder verfüegbar
+          Offline-Modus • Nur abbägladni Liäder verfiägbar
         </span>
       </div>
     </div>

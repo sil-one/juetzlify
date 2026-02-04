@@ -10,6 +10,7 @@ const FakeBiarSlide = () => {
       transition={{ duration: 0.5 }}
       className="slide-container"
     >
+      <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🍻</div>
       <CountUp
         end={79321}
         duration={2}

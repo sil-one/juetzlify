@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { useScrollPosition } from '../hooks/useScrollPosition';
@@ -20,7 +19,6 @@ const PrivatePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [authError, setAuthError] = useState(null);
-  const [wrappedEnabled, setWrappedEnabled] = useState(false);
 
   const { syncOfflinePlays } = useDownloads();
 
@@ -58,21 +56,8 @@ const PrivatePage = () => {
   useEffect(() => {
     if (isAuthenticated) {
       fetchTracks();
-      checkWrappedStatus();
     }
   }, [isAuthenticated]);
-
-  const checkWrappedStatus = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/wrapped/status`);
-      const data = await response.json();
-      if (data.success) {
-        setWrappedEnabled(data.wrappedEnabled.private);
-      }
-    } catch (err) {
-      console.error('Error checking wrapped status:', err);
-    }
-  };
 
   const fetchTracks = async () => {
     try {
@@ -176,25 +161,6 @@ const PrivatePage = () => {
           onAddToQueue={addToQueue}
         />
       </div>
-
-      {/* Wrapped Button */}
-      {wrappedEnabled && (
-        <Link
-          to="/wrapped-intern"
-          className="fixed bottom-24 right-6 z-50 group"
-          style={{
-            animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-          }}
-        >
-          <div className="relative">
-            <div className="absolute inset-0 bg-blue-400 rounded-full blur-xl opacity-75 group-hover:opacity-100 transition-opacity" />
-            <div className="relative px-6 py-3 bg-gradient-to-r from-blue-400 to-blue-500 text-white font-bold rounded-full shadow-2xl hover:shadow-blue-400/50 transition-all flex items-center gap-2 hover:scale-105">
-              <span className="text-2xl">🎭</span>
-              <span>Jützli Wrapped</span>
-            </div>
-          </div>
-        </Link>
-      )}
 
       {/* Sticky player bar - shows when scrolled past main player */}
       <StickyPlayerBar
