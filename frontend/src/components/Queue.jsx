@@ -120,7 +120,7 @@ const Queue = ({ queue, onRemove, onClear, onPlayTrack, onReorder }) => {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-4 pb-8">
+    <div className="w-full max-w-2xl mx-auto px-4 pb-4">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-sp-text">As negschts ({queue.length})</h2>
         <button

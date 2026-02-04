@@ -360,8 +360,8 @@ const TrackList = ({ tracks, currentTrack, onTrackSelect, onAddToQueue, isAdmin 
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-2 sm:px-4 pb-24">
-      <h2 className="text-2xl font-bold mb-6 text-sp-text">Liäder</h2>
+    <div className="w-full max-w-2xl mx-auto px-2 sm:px-4 pb-24 pt-2">
+      <h2 className="text-2xl font-bold mb-4 text-sp-text">Liäder</h2>
 
       <div className="space-y-8">
         {groupedTracks.map((group) => (

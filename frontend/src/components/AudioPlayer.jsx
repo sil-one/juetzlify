@@ -46,7 +46,7 @@ const AudioPlayer = ({
 
   return (
     <div
-      className="flex flex-col items-center justify-start pt-8 md:justify-center md:pt-0 min-h-screen text-sp-text p-4 relative overflow-hidden"
+      className="flex flex-col items-center justify-start pt-4 md:justify-center md:pt-0 min-h-screen text-sp-text p-4 pb-2 md:pb-4 relative overflow-hidden"
     >
       {/* Dynamic gradient background */}
       {currentTrack && (

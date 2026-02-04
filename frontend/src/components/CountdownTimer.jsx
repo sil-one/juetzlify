@@ -39,26 +39,26 @@ const CountdownTimer = () => {
   }
 
   return (
-    <div className="flex items-center gap-2 text-xs sm:text-sm text-sp-text-secondary">
-      <span className="text-sp-green">🎺🥁</span>
-      <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5 text-xs text-sp-text-secondary">
+      <span className="text-sp-green text-sm">🎺🥁</span>
+      <div className="flex items-center gap-0.5">
         <span className="text-sp-green font-semibold">{timeLeft.days}</span>
-        <span>Täg</span>
+        <span className="text-[10px] sm:text-xs">Täg</span>
       </div>
-      <span className="text-sp-text-muted">|</span>
-      <div className="flex items-center gap-1">
+      <span className="text-sp-text-muted text-[10px]">|</span>
+      <div className="flex items-center gap-0.5">
         <span className="text-sp-green font-semibold">{timeLeft.hours}</span>
-        <span>Stund</span>
+        <span className="text-[10px] sm:text-xs">Stund</span>
       </div>
-      <span className="text-sp-text-muted">|</span>
-      <div className="flex items-center gap-1">
+      <span className="text-sp-text-muted text-[10px]">|</span>
+      <div className="flex items-center gap-0.5">
         <span className="text-sp-green font-semibold">{timeLeft.minutes}</span>
-        <span>Minütä</span>
+        <span className="text-[10px] sm:text-xs">Minütä</span>
       </div>
-      <span className="text-sp-text-muted">|</span>
-      <div className="flex items-center gap-1">
+      <span className="text-sp-text-muted text-[10px] hidden sm:inline">|</span>
+      <div className="hidden sm:flex items-center gap-0.5">
         <span className="text-sp-green font-semibold">{timeLeft.seconds}</span>
-        <span>Sekundä</span>
+        <span className="text-xs">Sekundä</span>
       </div>
     </div>
   );
