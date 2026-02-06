@@ -19,10 +19,10 @@ const TotalHoursSlide = ({ totalPlays }) => {
         duration={2}
         className="wrapped-big-number"
       />
-      <div className="wrapped-label">Stunde Müsig</div>
+      <div className="wrapped-label">Stundä Müsig</div>
       <div className="wrapped-divider" />
       <p className="wrapped-text">
-        {formatDuration(totalSeconds)} am Stück! Das isch meh als es ganzes Wucheänd.
+        {formatDuration(totalSeconds)} am Stuck!. Das sind {totalPlays} Liäder glost!
       </p>
     </motion.div>
   );

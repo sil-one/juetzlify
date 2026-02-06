@@ -55,9 +55,9 @@ const WrappedPage = () => {
 
       if (!response.ok) {
         if (response.status === 404) {
-          setError('Wrapped isch no nöd verfüegbar');
+          setError('Wrapped isch nunid verfiägbar');
         } else {
-          setError(data.error || 'Fähler bim Lade');
+          setError(data.error || 'Fähler bim Ladä');
         }
         setLoading(false);
         return;

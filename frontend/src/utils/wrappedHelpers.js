@@ -48,6 +48,6 @@ export function formatNumber(num) {
  * @returns {number} Total seconds
  */
 export function estimateDuration(playCount) {
-  const AVERAGE_TRACK_LENGTH = 180; // 3 minutes in seconds
+  const AVERAGE_TRACK_LENGTH = 240; // 4 minutes in seconds
   return playCount * AVERAGE_TRACK_LENGTH;
 }
