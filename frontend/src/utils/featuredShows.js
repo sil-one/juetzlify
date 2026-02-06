@@ -4,13 +4,16 @@
  */
 
 export const FEATURED_SHOWS = [
+  { filename: 'barchi.png', alt: 'Bärchi Podcast' },
   { filename: 'blutt.jpg', alt: 'Blutt Podcast' },
   { filename: 'cyril.png', alt: 'Cyril Podcast' },
-  { filename: 'herr-merz.jpg', alt: 'Herr Merz Podcast' },
+  { filename: 'gagi.png', alt: 'Gägi Podcast' },
   { filename: 'fleischi.png', alt: 'Fleischi Podcast' },
+  { filename: 'herr-merz.jpg', alt: 'Herr Merz Podcast' },
   { filename: 'joni.png', alt: 'Joni Podcast' },
   { filename: 'meier.jpg', alt: 'Meier Podcast' },
   { filename: 'milfi.png', alt: 'Milfi Podcast' },
+  { filename: 'nicola.png', alt: 'Nicola Podcast' },
   { filename: 'nono.png', alt: 'NoNo Podcast' },
   { filename: 'piggy.jpg', alt: 'Piggy Podcast' },
   { filename: 'posci.png', alt: 'Posci Podcast' },

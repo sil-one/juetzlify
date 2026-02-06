@@ -111,7 +111,7 @@ const AudioPlayer = ({
               {/* Time display */}
               <div className="flex justify-between text-xs text-sp-text-muted mt-1 mb-3 md:mb-6">
                 <span>{formatTime(currentTime)}</span>
-                <span>{formatTime(duration)}</span>
+                <span>-{formatTime(duration - currentTime)}</span>
               </div>
 
               {/* Play/Pause and Skip buttons */}
