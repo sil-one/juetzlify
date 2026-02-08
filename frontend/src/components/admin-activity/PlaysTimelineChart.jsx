@@ -64,6 +64,13 @@ function PlaysTimelineChart({ data, hours }) {
     return null;
   };
 
+  // Calculate appropriate tick interval based on data length
+  const getTickInterval = () => {
+    if (data.length <= 24) return 'preserveStartEnd'; // Show fewer ticks for 1-24h
+    if (data.length <= 72) return Math.floor(data.length / 12); // ~12 ticks for 3d
+    return Math.floor(data.length / 14); // ~14 ticks for 7d
+  };
+
   return (
     <div className="bg-sp-dark rounded-lg p-6">
       <h2 className="text-xl font-bold text-sp-text mb-4">
@@ -85,10 +92,15 @@ function PlaysTimelineChart({ data, hours }) {
             dataKey="label"
             stroke="#B3B3B3"
             tick={{ fill: '#B3B3B3', fontSize: 12 }}
-            interval="preserveStartEnd"
+            interval={getTickInterval()}
           />
           <YAxis stroke="#B3B3B3" tick={{ fill: '#B3B3B3' }} />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip
+            content={<CustomTooltip />}
+            cursor={{ stroke: '#2ECC71', strokeWidth: 1 }}
+            animationDuration={150}
+            isAnimationActive={true}
+          />
           <Area
             type="monotone"
             dataKey="plays"
@@ -96,6 +108,7 @@ function PlaysTimelineChart({ data, hours }) {
             strokeWidth={2}
             fillOpacity={1}
             fill="url(#colorPlays)"
+            activeDot={{ r: 6, fill: '#2ECC71' }}
           />
         </AreaChart>
       </ResponsiveContainer>
