@@ -22,95 +22,54 @@ export function useFeaturedShowOverlay(pageType) {
   const nextTriggerTimeRef = useRef(null);
   const checkIntervalRef = useRef(null);
 
-  // Initialize settings and calculate next trigger time
-  useEffect(() => {
-    const initializeSettings = async () => {
+  // Function to select and show a random show
+  const showRandomShow = () => {
+    try {
+      // Get localStorage data
+      let storageData;
       try {
-        setIsLoading(true);
-
-        // 1. Check if shows are enabled on backend for this page type
-        const statusResponse = await fetch(`${API_BASE_URL}/settings/podcast-ads`);
-        if (!statusResponse.ok) {
-          console.warn('[Featured Shows] Failed to fetch status');
-          setIsLoading(false);
-          return;
-        }
-
-        const statusData = await statusResponse.json();
-        const enabled = statusData.podcastAdsEnabled?.[pageType];
-        setShowsEnabled(enabled);
-
-        if (!enabled) {
-          console.log('[Featured Shows] Disabled for', pageType);
-          setIsLoading(false);
-          return;
-        }
-
-        // 2. Fetch interval setting from backend
-        const intervalResponse = await fetch(`${API_BASE_URL}/settings/featured-show-interval`);
-        if (!intervalResponse.ok) {
-          console.warn('[Featured Shows] Failed to fetch interval, using default 60 minutes');
-        }
-
-        const intervalData = await intervalResponse.json();
-        const minutes = intervalData.success ? intervalData.intervalMinutes : 60;
-        setIntervalMinutes(minutes);
-
-        // 3. Get localStorage data
-        let storageData;
-        try {
-          storageData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
-            seenShows: [],
-            nextTriggerTime: null,
-            intervalUsed: null,
-          };
-        } catch (error) {
-          console.warn('[Featured Shows] Invalid localStorage data, resetting:', error);
-          storageData = {
-            seenShows: [],
-            nextTriggerTime: null,
-            intervalUsed: null,
-          };
-        }
-
-        // 4. Calculate next trigger time
-        const now = Date.now();
-        const intervalMs = minutes * 60 * 1000;
-        let nextTrigger;
-
-        if (minutes === 0) {
-          // Special case: interval 0 means show on every reload (immediately)
-          nextTrigger = now;
-        } else if (!storageData.nextTriggerTime || storageData.nextTriggerTime <= now) {
-          // No trigger time set OR it's in the past → calculate new one
-          nextTrigger = now + intervalMs;
-          console.log('[Featured Shows] Calculated new trigger time:', new Date(nextTrigger).toLocaleString());
-        } else {
-          // Use existing future trigger time (timer continues from where it left off)
-          nextTrigger = storageData.nextTriggerTime;
-          const minutesRemaining = Math.round((nextTrigger - now) / 60000);
-          console.log(`[Featured Shows] Continuing timer, ${minutesRemaining} min remaining until`, new Date(nextTrigger).toLocaleTimeString());
-        }
-
-        // 5. Save to localStorage and state
-        storageData.nextTriggerTime = nextTrigger;
-        storageData.intervalUsed = minutes;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
-        nextTriggerTimeRef.current = nextTrigger;
-
-        // 6. If interval is 0, show immediately
-        if (minutes === 0) {
-          showRandomShow();
-        }
+        storageData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+          seenShows: [],
+          nextTriggerTime: null,
+          intervalUsed: intervalMinutes,
+        };
       } catch (error) {
-        console.error('[Featured Shows] Error initializing:', error);
-      } finally {
-        setIsLoading(false);
+        console.warn('[Featured Shows] Invalid localStorage during show:', error);
+        storageData = {
+          seenShows: [],
+          nextTriggerTime: null,
+          intervalUsed: intervalMinutes,
+        };
       }
-    };
 
-    initializeSettings();
-  }, [pageType]);
+      // Select random show, prioritizing unseen ones
+      let unseenShows = FEATURED_SHOWS.filter(
+        (show) => !storageData.seenShows.includes(show.filename)
+      );
+
+      // If all shows have been seen, reset and start fresh
+      if (unseenShows.length === 0) {
+        console.log('[Featured Shows] All shows seen, resetting cycle');
+        storageData.seenShows = [];
+        unseenShows = FEATURED_SHOWS;
+      }
+
+      // Pick random from unseen shows
+      const selectedShowData = unseenShows[Math.floor(Math.random() * unseenShows.length)];
+      console.log('[Featured Shows] Selected show:', selectedShowData.alt);
+
+      // Update localStorage with this show (but don't set nextTriggerTime here - will be set on dismiss)
+      storageData.seenShows.push(selectedShowData.filename);
+      storageData.seenShows = [...new Set(storageData.seenShows)]; // Remove duplicates
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
+
+      // Show overlay
+      setSelectedShow(selectedShowData);
+      setShouldShowShow(true);
+    } catch (error) {
+      console.error('[Featured Shows] Error showing random show:', error);
+    }
+  };
 
   // Handle interval changes
   const handleIntervalChange = (newInterval) => {
@@ -167,54 +126,131 @@ export function useFeaturedShowOverlay(pageType) {
     setIntervalMinutes(newInterval);
   };
 
-  // Function to select and show a random show
-  const showRandomShow = () => {
+  // Dismiss handler - calculates next trigger time
+  const dismissShow = () => {
+    const now = Date.now();
+    const intervalMs = intervalMinutes * 60 * 1000;
+    const nextTrigger = now + intervalMs;
+
+    console.log('[Featured Shows] Dismissed. Next overlay at:', new Date(nextTrigger).toLocaleString());
+
+    // Update localStorage
+    let storageData;
     try {
-      // Get localStorage data
-      let storageData;
-      try {
-        storageData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
-          seenShows: [],
-          nextTriggerTime: null,
-          intervalUsed: intervalMinutes,
-        };
-      } catch (error) {
-        console.warn('[Featured Shows] Invalid localStorage during show:', error);
-        storageData = {
-          seenShows: [],
-          nextTriggerTime: null,
-          intervalUsed: intervalMinutes,
-        };
-      }
-
-      // Select random show, prioritizing unseen ones
-      let unseenShows = FEATURED_SHOWS.filter(
-        (show) => !storageData.seenShows.includes(show.filename)
-      );
-
-      // If all shows have been seen, reset and start fresh
-      if (unseenShows.length === 0) {
-        console.log('[Featured Shows] All shows seen, resetting cycle');
-        storageData.seenShows = [];
-        unseenShows = FEATURED_SHOWS;
-      }
-
-      // Pick random from unseen shows
-      const selectedShowData = unseenShows[Math.floor(Math.random() * unseenShows.length)];
-      console.log('[Featured Shows] Selected show:', selectedShowData.alt);
-
-      // Update localStorage with this show (but don't set nextTriggerTime here - will be set on dismiss)
-      storageData.seenShows.push(selectedShowData.filename);
-      storageData.seenShows = [...new Set(storageData.seenShows)]; // Remove duplicates
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
-
-      // Show overlay
-      setSelectedShow(selectedShowData);
-      setShouldShowShow(true);
+      storageData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { seenShows: [] };
     } catch (error) {
-      console.error('[Featured Shows] Error showing random show:', error);
+      console.warn('[Featured Shows] Invalid localStorage during dismiss:', error);
+      storageData = { seenShows: [] };
     }
+
+    storageData.nextTriggerTime = nextTrigger;
+    storageData.intervalUsed = intervalMinutes;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
+
+    // Update state
+    nextTriggerTimeRef.current = nextTrigger;
+    setShouldShowShow(false);
   };
+
+  // Initialize settings and calculate next trigger time
+  useEffect(() => {
+    const initializeSettings = async () => {
+      try {
+        setIsLoading(true);
+
+        // 1. Check if shows are enabled on backend for this page type
+        const statusResponse = await fetch(`${API_BASE_URL}/settings/podcast-ads`);
+        if (!statusResponse.ok) {
+          console.warn('[Featured Shows] Failed to fetch status');
+          setIsLoading(false);
+          return;
+        }
+
+        const statusData = await statusResponse.json();
+        const enabled = statusData.podcastAdsEnabled?.[pageType];
+        setShowsEnabled(enabled);
+
+        if (!enabled) {
+          console.log('[Featured Shows] Disabled for', pageType);
+          setIsLoading(false);
+          return;
+        }
+
+        // 2. Fetch interval setting from backend
+        const intervalResponse = await fetch(`${API_BASE_URL}/settings/featured-show-interval`);
+        if (!intervalResponse.ok) {
+          console.warn('[Featured Shows] Failed to fetch interval, using default 60 minutes');
+        }
+
+        const intervalData = await intervalResponse.json();
+        const minutes = intervalData.success ? intervalData.intervalMinutes : 60;
+        setIntervalMinutes(minutes);
+
+        // 3. Get localStorage data and migrate from old format if needed
+        let storageData;
+        try {
+          storageData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+            seenShows: [],
+            nextTriggerTime: null,
+            intervalUsed: null,
+          };
+
+          // Migrate from old format (had lastTriggerTime and dismissedCurrentShow)
+          if (storageData.lastTriggerTime !== undefined || storageData.dismissedCurrentShow !== undefined) {
+            console.log('[Featured Shows] Migrating from old localStorage format');
+            storageData = {
+              seenShows: storageData.seenShows || [],
+              nextTriggerTime: null, // Will be calculated below
+              intervalUsed: null,
+            };
+          }
+        } catch (error) {
+          console.warn('[Featured Shows] Invalid localStorage data, resetting:', error);
+          storageData = {
+            seenShows: [],
+            nextTriggerTime: null,
+            intervalUsed: null,
+          };
+        }
+
+        // 4. Calculate next trigger time
+        const now = Date.now();
+        const intervalMs = minutes * 60 * 1000;
+        let nextTrigger;
+
+        if (minutes === 0) {
+          // Special case: interval 0 means show on every reload (immediately)
+          nextTrigger = now;
+        } else if (!storageData.nextTriggerTime || storageData.nextTriggerTime <= now) {
+          // No trigger time set OR it's in the past → calculate new one
+          nextTrigger = now + intervalMs;
+          console.log('[Featured Shows] Calculated new trigger time:', new Date(nextTrigger).toLocaleString());
+        } else {
+          // Use existing future trigger time (timer continues from where it left off)
+          nextTrigger = storageData.nextTriggerTime;
+          const minutesRemaining = Math.round((nextTrigger - now) / 60000);
+          console.log(`[Featured Shows] Continuing timer, ${minutesRemaining} min remaining until`, new Date(nextTrigger).toLocaleTimeString());
+        }
+
+        // 5. Save to localStorage and state
+        storageData.nextTriggerTime = nextTrigger;
+        storageData.intervalUsed = minutes;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
+        nextTriggerTimeRef.current = nextTrigger;
+
+        // 6. If interval is 0, show immediately
+        if (minutes === 0) {
+          showRandomShow();
+        }
+      } catch (error) {
+        console.error('[Featured Shows] Error initializing:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeSettings();
+  }, [pageType]);
 
   // Timer to check if it's time to show overlay and detect interval changes
   useEffect(() => {
@@ -284,32 +320,6 @@ export function useFeaturedShowOverlay(pageType) {
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [intervalMinutes]);
-
-  // Dismiss handler - calculates next trigger time
-  const dismissShow = () => {
-    const now = Date.now();
-    const intervalMs = intervalMinutes * 60 * 1000;
-    const nextTrigger = now + intervalMs;
-
-    console.log('[Featured Shows] Dismissed. Next overlay at:', new Date(nextTrigger).toLocaleString());
-
-    // Update localStorage
-    let storageData;
-    try {
-      storageData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { seenShows: [] };
-    } catch (error) {
-      console.warn('[Featured Shows] Invalid localStorage during dismiss:', error);
-      storageData = { seenShows: [] };
-    }
-
-    storageData.nextTriggerTime = nextTrigger;
-    storageData.intervalUsed = intervalMinutes;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
-
-    // Update state
-    nextTriggerTimeRef.current = nextTrigger;
-    setShouldShowShow(false);
-  };
 
   return {
     shouldShowShow,

@@ -6,5 +6,6 @@
   "podcastAdsEnabled": {
     "public": true,
     "private": true
-  }
+  },
+  "featuredShowIntervalMinutes": 2
 }

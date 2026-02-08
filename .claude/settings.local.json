@@ -26,7 +26,8 @@
       "Bash(docker run --rm juetzlify-test sh -c \"cd /app/backend && cat ecosystem.config.js | head -5\")",
       "Bash(docker run:*)",
       "Bash(docker build:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(echo:*)"
     ]
   }
 }
