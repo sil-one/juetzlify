@@ -19,6 +19,7 @@ export const FEATURED_SHOWS = [
   { filename: 'piggy.jpg', alt: 'Piggy Podcast' },
   { filename: 'posci.png', alt: 'Posci Podcast' },
   { filename: 'rave.jpg', alt: 'Rave Podcast' },
+  { filename: 'schelbi.jpg', alt: 'Schelbi Podcast' },
   { filename: 'simi.jpg', alt: 'Simi Podcast' },
   { filename: 'surli.png', alt: 'Sürli Podcast' },
   { filename: 'thisi.jpg', alt: 'Thisi Podcast' },
