@@ -7,5 +7,5 @@
     "public": true,
     "private": true
   },
-  "featuredShowIntervalMinutes": 2
+  "featuredShowIntervalMinutes": 30
 }

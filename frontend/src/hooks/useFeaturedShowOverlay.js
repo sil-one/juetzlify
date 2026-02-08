@@ -213,34 +213,33 @@ export function useFeaturedShowOverlay(pageType) {
           };
         }
 
-        // 4. Calculate next trigger time
+        // 4. Check if we should show immediately or wait for timer
         const now = Date.now();
         const intervalMs = minutes * 60 * 1000;
-        let nextTrigger;
 
         if (minutes === 0) {
-          // Special case: interval 0 means show on every reload (immediately)
-          nextTrigger = now;
-        } else if (!storageData.nextTriggerTime || storageData.nextTriggerTime <= now) {
-          // No trigger time set OR it's in the past → calculate new one
-          nextTrigger = now + intervalMs;
-          console.log('[Featured Shows] Calculated new trigger time:', new Date(nextTrigger).toLocaleString());
+          // Special case: interval 0 means show on every reload
+          storageData.nextTriggerTime = now;
+          storageData.intervalUsed = minutes;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
+          nextTriggerTimeRef.current = now;
+          showRandomShow();
+          console.log('[Featured Shows] Showing immediately (interval = 0)');
+        } else if (!storageData.nextTriggerTime) {
+          // First visit (no trigger time set) → show immediately
+          console.log('[Featured Shows] First visit, showing immediately');
+          showRandomShow();
+          // Don't set nextTriggerTime here - will be set when user dismisses
+        } else if (storageData.nextTriggerTime <= now) {
+          // Trigger time is in the past → show now
+          console.log('[Featured Shows] Trigger time passed, showing immediately');
+          showRandomShow();
+          // Don't set nextTriggerTime here - will be set when user dismisses
         } else {
           // Use existing future trigger time (timer continues from where it left off)
-          nextTrigger = storageData.nextTriggerTime;
-          const minutesRemaining = Math.round((nextTrigger - now) / 60000);
-          console.log(`[Featured Shows] Continuing timer, ${minutesRemaining} min remaining until`, new Date(nextTrigger).toLocaleTimeString());
-        }
-
-        // 5. Save to localStorage and state
-        storageData.nextTriggerTime = nextTrigger;
-        storageData.intervalUsed = minutes;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
-        nextTriggerTimeRef.current = nextTrigger;
-
-        // 6. If interval is 0, show immediately
-        if (minutes === 0) {
-          showRandomShow();
+          nextTriggerTimeRef.current = storageData.nextTriggerTime;
+          const minutesRemaining = Math.round((storageData.nextTriggerTime - now) / 60000);
+          console.log(`[Featured Shows] Continuing timer, ${minutesRemaining} min remaining until`, new Date(storageData.nextTriggerTime).toLocaleTimeString());
         }
       } catch (error) {
         console.error('[Featured Shows] Error initializing:', error);
