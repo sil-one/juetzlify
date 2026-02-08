@@ -18,7 +18,7 @@ const AudioPlayer = ({
   onPlayNext,
   onPlayPrevious,
   isShuffleOn,
-  isRepeatOn,
+  repeatMode,
   onToggleShuffle,
   onToggleRepeat,
 }) => {
@@ -188,12 +188,29 @@ const AudioPlayer = ({
                 {/* Repeat button */}
                 <button
                   onClick={onToggleRepeat}
-                  className={`secondary-button w-10 h-10 flex items-center justify-center ${isRepeatOn ? 'repeat-active' : ''}`}
-                  title="Repeat"
+                  className={`secondary-button w-10 h-10 flex items-center justify-center ${repeatMode !== 'off' ? 'repeat-active' : ''}`}
+                  title={
+                    repeatMode === 'off' ? 'Repeat Off' :
+                    repeatMode === 'all' ? 'Repeat All' :
+                    repeatMode === 'queue' ? 'Repeat Queue' :
+                    'Repeat One'
+                  }
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
-                  </svg>
+                  {repeatMode === 'one' ? (
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
+                      <path d="M11 11h2v6h-2v-6zm0-2h2v1h-2V9z" />
+                    </svg>
+                  ) : repeatMode === 'queue' ? (
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
+                      <path d="M9 10h6v1H9v-1zm0 2h6v1H9v-1zm0 2h4v1H9v-1z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
+                    </svg>
+                  )}
                 </button>
               </div>
 

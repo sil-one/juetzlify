@@ -33,7 +33,7 @@ const PublicPage = () => {
     duration,
     queue,
     isShuffleOn,
-    isRepeatOn,
+    repeatMode,
     playTrack,
     togglePlay,
     seek,
@@ -124,7 +124,7 @@ const PublicPage = () => {
         onPlayNext={playNext}
         onPlayPrevious={playPrevious}
         isShuffleOn={isShuffleOn}
-        isRepeatOn={isRepeatOn}
+        repeatMode={repeatMode}
         onToggleShuffle={toggleShuffle}
         onToggleRepeat={toggleRepeat}
       />
@@ -156,7 +156,7 @@ const PublicPage = () => {
         onPlayNext={playNext}
         onPlayPrevious={playPrevious}
         isShuffleOn={isShuffleOn}
-        isRepeatOn={isRepeatOn}
+        repeatMode={repeatMode}
         onToggleShuffle={toggleShuffle}
         onToggleRepeat={toggleRepeat}
         isVisible={isScrolledPast}

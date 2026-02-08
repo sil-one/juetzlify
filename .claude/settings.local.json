@@ -27,7 +27,8 @@
       "Bash(docker run:*)",
       "Bash(docker build:*)",
       "Bash(npm run build:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(grep:*)"
     ]
   }
 }

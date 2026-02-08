@@ -2,6 +2,7 @@ import express from 'express';
 import {
   getPodcastAdsStatus,
   getFeaturedShowInterval,
+  getWrappedStatus,
 } from '../services/settingsService.js';
 
 const router = express.Router();
@@ -44,6 +45,27 @@ router.get('/featured-show-interval', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch featured show interval',
+    });
+  }
+});
+
+/**
+ * GET /api/settings/wrapped-status
+ * Get wrapped page enabled status (public endpoint)
+ */
+router.get('/wrapped-status', async (req, res) => {
+  try {
+    const status = await getWrappedStatus();
+
+    res.json({
+      success: true,
+      wrappedEnabled: status,
+    });
+  } catch (error) {
+    console.error('Error fetching wrapped status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch wrapped status',
     });
   }
 });

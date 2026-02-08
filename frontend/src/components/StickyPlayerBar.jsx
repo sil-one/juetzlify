@@ -11,7 +11,7 @@ const StickyPlayerBar = ({
   onPlayNext,
   onPlayPrevious,
   isShuffleOn,
-  isRepeatOn,
+  repeatMode,
   onToggleShuffle,
   onToggleRepeat,
   isVisible = true,
@@ -159,17 +159,34 @@ const StickyPlayerBar = ({
           <button
             onClick={onToggleRepeat}
             className={`hidden sm:flex w-8 h-8 rounded-full items-center justify-center transition-all duration-200 active:scale-90 hover:scale-105 ${
-              isRepeatOn ? 'text-white' : 'bg-sp-gray/50 text-sp-text-secondary hover:bg-sp-light-gray hover:text-sp-text'
+              repeatMode !== 'off' ? 'text-white' : 'bg-sp-gray/50 text-sp-text-secondary hover:bg-sp-light-gray hover:text-sp-text'
             }`}
-            style={isRepeatOn ? {
+            style={repeatMode !== 'off' ? {
               background: accentColor,
               boxShadow: `0 4px 16px ${albumColor ? albumColor.vibrantRgba(0.5) : 'rgba(46, 204, 113, 0.4)'}`,
             } : {}}
-            aria-label="Repeat"
+            aria-label={
+              repeatMode === 'off' ? 'Repeat Off' :
+              repeatMode === 'all' ? 'Repeat All' :
+              repeatMode === 'queue' ? 'Repeat Queue' :
+              'Repeat One'
+            }
           >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
-            </svg>
+            {repeatMode === 'one' ? (
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
+                <path d="M11 11h2v6h-2v-6zm0-2h2v1h-2V9z" />
+              </svg>
+            ) : repeatMode === 'queue' ? (
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
+                <path d="M9 10h6v1H9v-1zm0 2h6v1H9v-1zm0 2h4v1H9v-1z" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
+              </svg>
+            )}
           </button>
         </div>
       </div>

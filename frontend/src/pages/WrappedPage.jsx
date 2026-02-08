@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSwipeable } from 'react-swipeable';
 import { AnimatePresence } from 'framer-motion';
 import { API_BASE_URL } from '../utils/constants';
+import useWrappedAudio from '../hooks/useWrappedAudio.jsx';
 import '../styles/wrapped.css';
 
 // Import all slide components
@@ -24,12 +25,22 @@ import ThankYouSlide from '../components/wrapped/ThankYouSlide';
 import SlideNavigation from '../components/wrapped/SlideNavigation';
 
 const TOTAL_SLIDES = 16;
+const TOP_TRACK_SLIDE_INDEX = 6;
 
 const WrappedPage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Initialize wrapped audio with background music
+  const { audioElements, autoplayBlocked, manualPlay } = useWrappedAudio({
+    statistics,
+    currentSlide,
+    topTrackSlideIndex: TOP_TRACK_SLIDE_INDEX,
+    trackType: 'public',
+    enabled: !loading && !error && statistics
+  });
 
   useEffect(() => {
     fetchStatistics();
@@ -113,11 +124,11 @@ const WrappedPage = () => {
       case 3:
         return <FakeBiarSlide />;
       case 4:
-        return <TopTrackSlide track={statistics.topTracks[0]} />;
+        return <TopFiveSlide topTracks={statistics.topTracks} />;
       case 5:
         return <FakeChatzaSlide />;
       case 6:
-        return <TopFiveSlide topTracks={statistics.topTracks} />;
+        return <TopTrackSlide track={statistics.topTracks[0]} />;
       case 7:
         return <DailyBreakdownSlide playsByDay={statistics.playsByDay} />;
       case 8:
@@ -178,6 +189,20 @@ const WrappedPage = () => {
       <AnimatePresence mode="wait">
         <div key={currentSlide}>{renderSlide()}</div>
       </AnimatePresence>
+
+      {/* Hidden audio elements for background music */}
+      {audioElements}
+
+      {/* Play button if autoplay blocked */}
+      {autoplayBlocked && (
+        <button
+          onClick={manualPlay}
+          className="wrapped-play-button"
+          aria-label="Müsig aktiviärä"
+        >
+          ▶️ Müsig aktiviärä
+        </button>
+      )}
 
       <SlideNavigation
         currentSlide={currentSlide}

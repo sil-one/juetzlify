@@ -29,13 +29,17 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
       return false;
     }
   });
-  const [isRepeatOn, setIsRepeatOn] = useState(() => {
+  const [repeatMode, setRepeatMode] = useState(() => {
     try {
       const saved = localStorage.getItem('juetzlify-repeat');
-      return saved === 'true';
+      // Migrate old boolean values to new mode system
+      if (saved === 'true') return 'all';
+      if (saved === 'false') return 'off';
+      // Valid modes: 'off', 'all', 'queue', 'one'
+      return ['off', 'all', 'queue', 'one'].includes(saved) ? saved : 'off';
     } catch (error) {
       console.error('Failed to load repeat state from localStorage:', error);
-      return false;
+      return 'off';
     }
   });
   const lastBackwardTimeRef = useRef(0);
@@ -121,14 +125,14 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
     }
   }, [isShuffleOn]);
 
-  // Save repeat state to localStorage whenever it changes
+  // Save repeat mode to localStorage whenever it changes
   useEffect(() => {
     try {
-      localStorage.setItem('juetzlify-repeat', isRepeatOn.toString());
+      localStorage.setItem('juetzlify-repeat', repeatMode);
     } catch (error) {
-      console.error('Failed to save repeat state to localStorage:', error);
+      console.error('Failed to save repeat mode to localStorage:', error);
     }
-  }, [isRepeatOn]);
+  }, [repeatMode]);
 
   // Sync offline plays when reconnecting
   useEffect(() => {
@@ -276,18 +280,33 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
   };
 
   const playNext = () => {
+    // If repeat one is active, replay current track
+    if (repeatMode === 'one' && currentTrack) {
+      playTrack(currentTrack);
+      return;
+    }
+
     // If there's a track in the queue, play it
     if (queue.length > 0) {
       if (isShuffleOn) {
         // Pick random track from queue
         const randomIndex = Math.floor(Math.random() * queue.length);
         const nextTrack = queue[randomIndex];
-        setQueue(prev => prev.filter((_, i) => i !== randomIndex));
+        // Don't remove from queue if repeat queue is on
+        if (repeatMode !== 'queue') {
+          setQueue(prev => prev.filter((_, i) => i !== randomIndex));
+        }
         playTrack(nextTrack);
       } else {
         // Play first track in queue
         const nextTrack = queue[0];
-        setQueue(prev => prev.slice(1));
+        // Don't remove from queue if repeat queue is on
+        if (repeatMode !== 'queue') {
+          setQueue(prev => prev.slice(1));
+        } else {
+          // Move first track to end of queue (keep looping)
+          setQueue(prev => [...prev.slice(1), prev[0]]);
+        }
         playTrack(nextTrack);
       }
       return;
@@ -297,8 +316,8 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
     if (tracks.length === 0) return;
 
     if (isShuffleOn) {
-      // Pick random track from tracks (excluding current)
-      const availableTracks = currentTrack
+      // Pick random track from tracks (excluding current if not repeating)
+      const availableTracks = currentTrack && repeatMode !== 'all'
         ? tracks.filter(t => t.id !== currentTrack.id)
         : tracks;
       if (availableTracks.length > 0) {
@@ -314,8 +333,8 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
       const currentIndex = tracks.findIndex(t => t.id === currentTrack.id);
       const nextIndex = (currentIndex + 1) % tracks.length;
 
-      // Only play next if we're not at the end OR if repeat is on
-      if (currentIndex < tracks.length - 1 || isRepeatOn) {
+      // Only play next if we're not at the end OR if repeat all is on
+      if (currentIndex < tracks.length - 1 || repeatMode === 'all') {
         playTrack(tracks[nextIndex]);
       }
     }
@@ -456,7 +475,13 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
       navigator.mediaSession.playbackState = 'paused';
     }
     // Auto-play next track (respects repeat mode in playNext logic)
-    if (queue.length > 0 || isRepeatOn || isShuffleOn) {
+    // Repeat one: replay same track
+    // Repeat all: continue to next track (wraps around)
+    // Repeat queue: loop queue forever
+    // Repeat off: play next if available, stop at end
+    if (repeatMode === 'one') {
+      playNext(); // Will replay current track
+    } else if (queue.length > 0 || repeatMode === 'all' || repeatMode === 'queue' || isShuffleOn) {
       playNext();
     } else {
       // Normal behavior: play next track or stop at end
@@ -472,7 +497,13 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
   };
 
   const toggleRepeat = () => {
-    setIsRepeatOn(prev => !prev);
+    setRepeatMode(prev => {
+      // Cycle through: off -> all -> queue -> one -> off
+      if (prev === 'off') return 'all';
+      if (prev === 'all') return 'queue';
+      if (prev === 'queue') return 'one';
+      return 'off';
+    });
   };
 
   return {
@@ -484,7 +515,7 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
     volume,
     queue,
     isShuffleOn,
-    isRepeatOn,
+    repeatMode,
     playTrack,
     togglePlay,
     seek,

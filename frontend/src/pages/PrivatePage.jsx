@@ -30,7 +30,7 @@ const PrivatePage = () => {
     duration,
     queue,
     isShuffleOn,
-    isRepeatOn,
+    repeatMode,
     playTrack,
     togglePlay,
     seek,
@@ -142,7 +142,7 @@ const PrivatePage = () => {
         onPlayNext={playNext}
         onPlayPrevious={playPrevious}
         isShuffleOn={isShuffleOn}
-        isRepeatOn={isRepeatOn}
+        repeatMode={repeatMode}
         onToggleShuffle={toggleShuffle}
         onToggleRepeat={toggleRepeat}
       />
@@ -172,7 +172,7 @@ const PrivatePage = () => {
         onPlayNext={playNext}
         onPlayPrevious={playPrevious}
         isShuffleOn={isShuffleOn}
-        isRepeatOn={isRepeatOn}
+        repeatMode={repeatMode}
         onToggleShuffle={toggleShuffle}
         onToggleRepeat={toggleRepeat}
         isVisible={isScrolledPast}

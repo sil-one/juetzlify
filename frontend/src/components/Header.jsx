@@ -16,7 +16,7 @@ const Header = ({ isAuthenticated, onLogout }) => {
   useEffect(() => {
     const checkWrappedStatus = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/admin/wrapped/status`);
+        const response = await fetch(`${API_BASE_URL}/settings/wrapped-status`);
         const data = await response.json();
         if (data.success) {
           setWrappedStatus(data.wrappedEnabled);

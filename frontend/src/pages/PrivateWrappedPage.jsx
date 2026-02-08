@@ -3,6 +3,7 @@ import { useSwipeable } from 'react-swipeable';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { API_BASE_URL } from '../utils/constants';
+import useWrappedAudio from '../hooks/useWrappedAudio.jsx';
 import PasswordPrompt from '../components/PasswordPrompt';
 import '../styles/wrapped.css';
 
@@ -26,6 +27,7 @@ import ThankYouSlide from '../components/wrapped/ThankYouSlide';
 import SlideNavigation from '../components/wrapped/SlideNavigation';
 
 const TOTAL_SLIDES = 16;
+const TOP_TRACK_SLIDE_INDEX = 4;
 
 const PrivateWrappedPage = () => {
   const { isAuthenticated, isLoading: authLoading, login } = useAuth('private');
@@ -34,6 +36,15 @@ const PrivateWrappedPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [authError, setAuthError] = useState(null);
+
+  // Initialize wrapped audio with background music
+  const { audioElements, autoplayBlocked, manualPlay } = useWrappedAudio({
+    statistics,
+    currentSlide,
+    topTrackSlideIndex: TOP_TRACK_SLIDE_INDEX,
+    trackType: 'private',
+    enabled: !loading && !error && statistics && isAuthenticated
+  });
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -224,6 +235,20 @@ const PrivateWrappedPage = () => {
       <AnimatePresence mode="wait">
         <div key={currentSlide}>{renderSlide()}</div>
       </AnimatePresence>
+
+      {/* Hidden audio elements for background music */}
+      {audioElements}
+
+      {/* Play button if autoplay blocked */}
+      {autoplayBlocked && (
+        <button
+          onClick={manualPlay}
+          className="wrapped-play-button"
+          aria-label="Müsig aktiviärä"
+        >
+          ▶️ Müsig aktiviärä
+        </button>
+      )}
 
       <SlideNavigation
         currentSlide={currentSlide}
