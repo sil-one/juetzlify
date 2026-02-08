@@ -24,6 +24,8 @@ import {
   setWrappedEnabled,
   getPodcastAdsStatus,
   setPodcastAdsEnabled,
+  getFeaturedShowInterval,
+  setFeaturedShowInterval,
 } from '../services/settingsService.js';
 import { config } from '../config/config.js';
 import { requireAdmin } from '../middleware/authMiddleware.js';
@@ -513,6 +515,66 @@ router.get('/statistics/timeline', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch plays timeline',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/featured-show-interval
+ * Get featured show interval in minutes
+ */
+router.get('/featured-show-interval', async (req, res) => {
+  try {
+    const minutes = await getFeaturedShowInterval();
+
+    res.json({
+      success: true,
+      intervalMinutes: minutes,
+    });
+  } catch (error) {
+    console.error('Error fetching featured show interval:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch featured show interval',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/featured-show-interval
+ * Set featured show interval in minutes (0 = every reload, max 1440 = 24 hours)
+ */
+router.post('/featured-show-interval', async (req, res) => {
+  try {
+    const { minutes } = req.body;
+
+    if (typeof minutes !== 'number') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid minutes value. Must be a number',
+      });
+    }
+
+    if (minutes < 0 || minutes > 1440) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid minutes value. Must be between 0 and 1440',
+      });
+    }
+
+    const result = await setFeaturedShowInterval(minutes);
+
+    res.json({
+      success: true,
+      message: `Featured show interval set to ${minutes} minutes`,
+      ...result,
+    });
+  } catch (error) {
+    console.error('Error setting featured show interval:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to set featured show interval',
+      message: error.message,
     });
   }
 });

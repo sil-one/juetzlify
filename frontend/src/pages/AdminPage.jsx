@@ -22,6 +22,9 @@ const AdminPage = () => {
   const [bannerVersion, setBannerVersion] = useState(1);
   const [isBumping, setIsBumping] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [featuredShowInterval, setFeaturedShowInterval] = useState(60);
+  const [intervalInputValue, setIntervalInputValue] = useState('60');
+  const [isUpdatingInterval, setIsUpdatingInterval] = useState(false);
 
   // Get auth headers for API requests
   const getAuthHeaders = () => {
@@ -38,6 +41,7 @@ const AdminPage = () => {
       fetchWrappedStatus();
       fetchPodcastAdsStatus();
       fetchBannerVersion();
+      fetchFeaturedShowInterval();
     }
   }, [isAuthenticated]);
 
@@ -229,6 +233,57 @@ const AdminPage = () => {
       alert('Failed to bump banner version');
     } finally {
       setIsBumping(false);
+    }
+  };
+
+  const fetchFeaturedShowInterval = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/featured-show-interval`, { headers: getAuthHeaders() });
+      const data = await response.json();
+
+      if (data.success) {
+        setFeaturedShowInterval(data.intervalMinutes);
+        setIntervalInputValue(String(data.intervalMinutes));
+      }
+    } catch (err) {
+      console.error('Error fetching featured show interval:', err);
+    }
+  };
+
+  const updateFeaturedShowInterval = async () => {
+    const minutes = parseInt(intervalInputValue, 10);
+
+    if (isNaN(minutes)) {
+      alert('Please enter a valid number');
+      return;
+    }
+
+    if (minutes < 0 || minutes > 1440) {
+      alert('Interval must be between 0 and 1440 minutes (24 hours)');
+      return;
+    }
+
+    try {
+      setIsUpdatingInterval(true);
+      const response = await fetch(`${API_BASE_URL}/admin/featured-show-interval`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ minutes }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setFeaturedShowInterval(minutes);
+        alert(`Featured show interval updated to ${minutes} minutes${minutes === 0 ? ' (every reload)' : ''}`);
+      } else {
+        alert(`Failed to update interval: ${data.error}`);
+      }
+    } catch (err) {
+      console.error('Error updating featured show interval:', err);
+      alert('Failed to update featured show interval');
+    } finally {
+      setIsUpdatingInterval(false);
     }
   };
 
@@ -581,8 +636,78 @@ const AdminPage = () => {
             </div>
           </div>
 
+          {/* Featured Show Interval Setting */}
+          <div className="mt-6 bg-sp-gray p-4 rounded-lg">
+            <h3 className="text-lg font-semibold mb-3">Display Interval</h3>
+            <p className="text-sm text-sp-text-secondary mb-4">
+              Set how often featured shows can appear (0 = every page reload, default = 60 minutes)
+            </p>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="flex-1">
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="1440"
+                    value={intervalInputValue}
+                    onChange={(e) => setIntervalInputValue(e.target.value)}
+                    className="w-full px-4 py-2 bg-sp-black text-sp-text rounded-lg border border-sp-light-gray focus:border-sp-green focus:outline-none"
+                    placeholder="Minutes"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sp-text-secondary text-sm pointer-events-none">
+                    minutes
+                  </span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {/* Quick preset buttons */}
+                <button
+                  onClick={() => setIntervalInputValue('0')}
+                  className="px-3 py-2 bg-sp-black hover:bg-sp-light-gray text-sp-text-secondary hover:text-sp-text text-sm rounded-lg transition-colors"
+                  title="Every reload"
+                >
+                  0
+                </button>
+                <button
+                  onClick={() => setIntervalInputValue('15')}
+                  className="px-3 py-2 bg-sp-black hover:bg-sp-light-gray text-sp-text-secondary hover:text-sp-text text-sm rounded-lg transition-colors"
+                >
+                  15
+                </button>
+                <button
+                  onClick={() => setIntervalInputValue('30')}
+                  className="px-3 py-2 bg-sp-black hover:bg-sp-light-gray text-sp-text-secondary hover:text-sp-text text-sm rounded-lg transition-colors"
+                >
+                  30
+                </button>
+                <button
+                  onClick={() => setIntervalInputValue('60')}
+                  className="px-3 py-2 bg-sp-black hover:bg-sp-light-gray text-sp-text-secondary hover:text-sp-text text-sm rounded-lg transition-colors"
+                >
+                  60
+                </button>
+                <button
+                  onClick={() => setIntervalInputValue('120')}
+                  className="px-3 py-2 bg-sp-black hover:bg-sp-light-gray text-sp-text-secondary hover:text-sp-text text-sm rounded-lg transition-colors"
+                >
+                  120
+                </button>
+              </div>
+              <button
+                onClick={updateFeaturedShowInterval}
+                disabled={isUpdatingInterval}
+                className="px-6 py-2 bg-sp-green hover:bg-[#27ae60] text-sp-black font-bold rounded-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-sp-green/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                {isUpdatingInterval ? 'Updating...' : 'Update'}
+              </button>
+            </div>
+            <p className="text-xs text-sp-text-muted mt-3">
+              Current: {featuredShowInterval} minutes {featuredShowInterval === 0 && '(shows on every reload)'}
+            </p>
+          </div>
+
           {/* Featured Shows Gallery */}
-          <div>
+          <div className="mt-6">
             <h3 className="text-lg font-semibold mb-3">Available Shows</h3>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-9 gap-3">
               {FEATURED_SHOWS.map((show) => (

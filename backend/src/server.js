@@ -9,6 +9,7 @@ import authRouter from './routes/auth.js';
 import adminRouter from './routes/admin.js';
 import wrappedRouter from './routes/wrapped.js';
 import bannerRouter from './routes/banner.js';
+import settingsRouter from './routes/settings.js';
 import { getAllTracks } from './services/trackService.js';
 import { initializeBatchWriter } from './services/playStatisticsService.js';
 import { initializeCacheInvalidation } from './services/cacheInvalidationService.js';
@@ -34,6 +35,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/wrapped', wrappedRouter);
 app.use('/api/banner', bannerRouter);
+app.use('/api/settings', settingsRouter);
 app.use('/api/tracks', tracksRouter);
 app.use('/api/stream', streamRouter);
 

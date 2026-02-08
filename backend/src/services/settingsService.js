@@ -79,6 +79,7 @@ function getDefaultSettings() {
       public: true,
       private: true,
     },
+    featuredShowIntervalMinutes: 60, // Default: 1 hour (0 = every reload)
   };
 }
 
@@ -388,4 +389,85 @@ export async function arePodcastAdsEnabled(type) {
  */
 export function clearSettingsCache() {
   settingsCache = null;
+}
+
+/**
+ * Get featured show interval in minutes
+ */
+export async function getFeaturedShowInterval() {
+  const settings = await getSettings();
+  return settings.featuredShowIntervalMinutes ?? 60;
+}
+
+/**
+ * Set featured show interval in minutes with atomic read-modify-write
+ */
+export async function setFeaturedShowInterval(minutes) {
+  if (typeof minutes !== 'number' || minutes < 0) {
+    throw new Error('Invalid interval. Must be a non-negative number');
+  }
+
+  let release = null;
+
+  try {
+    await ensureDataDir();
+
+    // Create file if it doesn't exist
+    try {
+      await fs.access(SETTINGS_FILE);
+    } catch {
+      await fs.writeFile(SETTINGS_FILE, JSON.stringify(getDefaultSettings(), null, 2), 'utf-8');
+    }
+
+    // Acquire lock BEFORE reading
+    release = await lockfile.lock(SETTINGS_FILE, {
+      retries: {
+        retries: 100,
+        minTimeout: 100,
+        maxTimeout: 500,
+      },
+      stale: 10000,
+    });
+
+    console.log(`[Settings] Lock acquired for updating featured show interval...`);
+
+    // Read latest data with lock held
+    const data = await fs.readFile(SETTINGS_FILE, 'utf-8');
+    const settings = JSON.parse(data);
+
+    // Modify
+    settings.featuredShowIntervalMinutes = minutes;
+
+    // Write to temp file
+    await fs.writeFile(SETTINGS_TMP, JSON.stringify(settings, null, 2), 'utf-8');
+
+    // Atomic rename
+    await fs.rename(SETTINGS_TMP, SETTINGS_FILE);
+
+    // Clear cache
+    settingsCache = null;
+
+    console.log(`[Settings] Updated featured show interval to ${minutes} minutes`);
+
+    return { success: true, minutes };
+  } catch (error) {
+    console.error('Error setting featured show interval:', error.message);
+
+    try {
+      await fs.unlink(SETTINGS_TMP);
+    } catch {
+      // Ignore
+    }
+
+    throw error;
+  } finally {
+    if (release) {
+      try {
+        await release();
+        console.log('[Settings] Lock released');
+      } catch (error) {
+        console.error('[Settings] Error releasing lock:', error.message);
+      }
+    }
+  }
 }

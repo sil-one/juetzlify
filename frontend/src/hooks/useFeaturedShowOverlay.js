@@ -3,7 +3,6 @@ import { FEATURED_SHOWS } from '../utils/featuredShows.js';
 import { API_BASE_URL } from '../utils/constants.js';
 
 const STORAGE_KEY = 'juetzlify-featured-shows';
-const ONE_HOUR_MS = 3600000; // 1 hour in milliseconds
 
 /**
  * Hook for managing featured show overlay display
@@ -22,7 +21,7 @@ export function useFeaturedShowOverlay(pageType) {
         setIsLoading(true);
 
         // 1. Check if shows are enabled on backend for this page type
-        const statusResponse = await fetch(`${API_BASE_URL}/admin/podcast-ads/status`);
+        const statusResponse = await fetch(`${API_BASE_URL}/settings/podcast-ads`);
         if (!statusResponse.ok) {
           console.warn('Failed to fetch featured shows status');
           setIsLoading(false);
@@ -38,31 +37,42 @@ export function useFeaturedShowOverlay(pageType) {
           return;
         }
 
-        // 2. Get or initialize localStorage data
+        // 2. Fetch interval setting from backend
+        const intervalResponse = await fetch(`${API_BASE_URL}/settings/featured-show-interval`);
+        if (!intervalResponse.ok) {
+          console.warn('Failed to fetch featured show interval, using default 60 minutes');
+        }
+
+        const intervalData = await intervalResponse.json();
+        const intervalMinutes = intervalData.success ? intervalData.intervalMinutes : 60;
+        const intervalMs = intervalMinutes * 60 * 1000; // Convert minutes to milliseconds
+
+        // 3. Get or initialize localStorage data
         const storageData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
           seenShows: [],
           lastShownTimestamp: null,
           dismissedCurrentShow: false,
         };
 
-        // 3. Check 1-hour cooldown from initial page load
+        // 4. Check cooldown from initial page load (unless interval is 0 = every reload)
         const now = Date.now();
         if (
+          intervalMinutes > 0 &&
           storageData.lastShownTimestamp &&
-          now - storageData.lastShownTimestamp < ONE_HOUR_MS
+          now - storageData.lastShownTimestamp < intervalMs
         ) {
           // Still within cooldown period, don't show show
           setIsLoading(false);
           return;
         }
 
-        // 4. Check if user dismissed show in this session already
-        if (storageData.dismissedCurrentShow) {
+        // 5. Check if user dismissed show in this session already (only if interval > 0)
+        if (intervalMinutes > 0 && storageData.dismissedCurrentShow) {
           setIsLoading(false);
           return;
         }
 
-        // 5. Select random show, prioritizing unseen ones
+        // 6. Select random show, prioritizing unseen ones
         let unseenShows = FEATURED_SHOWS.filter(
           (show) => !storageData.seenShows.includes(show.filename)
         );
@@ -76,7 +86,7 @@ export function useFeaturedShowOverlay(pageType) {
         // Pick random from unseen shows
         const selectedShowData = unseenShows[Math.floor(Math.random() * unseenShows.length)];
 
-        // 6. Update localStorage with this show and timestamp
+        // 7. Update localStorage with this show and timestamp
         storageData.seenShows.push(selectedShowData.filename);
         // Remove duplicates (shouldn't happen but be safe)
         storageData.seenShows = [...new Set(storageData.seenShows)];
@@ -84,7 +94,7 @@ export function useFeaturedShowOverlay(pageType) {
         storageData.dismissedCurrentShow = false;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
 
-        // 7. Set UI state
+        // 8. Set UI state
         setSelectedShow(selectedShowData);
         setShouldShowShow(true);
       } catch (error) {
