@@ -635,10 +635,11 @@ export async function getPlaysTimeline(hoursAgo = 24) {
       time: bucketTime.toISOString(),
       label,
       plays: 0,
+      tracks: {}, // Track counts per bucket { filename: { count, title, artist } }
     });
   }
 
-  // Fill buckets with play counts
+  // Fill buckets with play counts and track data
   recentPlays.forEach((play) => {
     const playTime = new Date(play.timestamp);
     const hoursDiff = Math.floor((now - playTime) / (60 * 60 * 1000));
@@ -646,7 +647,32 @@ export async function getPlaysTimeline(hoursAgo = 24) {
 
     if (bucketIndex >= 0 && bucketIndex < buckets.length) {
       buckets[bucketIndex].plays++;
+
+      // Track individual songs in this bucket
+      if (!buckets[bucketIndex].tracks[play.filename]) {
+        buckets[bucketIndex].tracks[play.filename] = {
+          count: 0,
+          title: play.title,
+          artist: play.artist,
+          trackId: play.trackId,
+        };
+      }
+      buckets[bucketIndex].tracks[play.filename].count++;
     }
+  });
+
+  // Convert tracks object to sorted array (top 3 per bucket)
+  buckets.forEach((bucket) => {
+    bucket.topTracks = Object.entries(bucket.tracks)
+      .map(([filename, data]) => ({
+        filename,
+        ...data,
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3); // Keep only top 3 tracks per hour
+
+    // Remove the raw tracks object (we only need topTracks in response)
+    delete bucket.tracks;
   });
 
   return buckets;

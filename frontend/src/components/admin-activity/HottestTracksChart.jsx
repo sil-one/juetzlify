@@ -10,11 +10,14 @@ import {
 } from 'recharts';
 
 function HottestTracksChart({ data, timeWindow }) {
+  // Format time period label
+  const timeLabel = timeWindow >= 24 ? `${timeWindow / 24}d` : `${timeWindow}h`;
+
   if (!data || data.length === 0) {
     return (
       <div className="bg-sp-dark rounded-lg p-6">
         <h2 className="text-xl font-bold text-sp-text mb-4">
-          Hottest Tracks (Last {timeWindow}h)
+          Hottest Tracks (Last {timeLabel})
         </h2>
         <div className="flex flex-col items-center justify-center py-12 text-sp-text-muted">
           <svg
@@ -30,7 +33,7 @@ function HottestTracksChart({ data, timeWindow }) {
               d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
             />
           </svg>
-          <p>No plays in the last {timeWindow}h</p>
+          <p>No plays in the last {timeLabel}</p>
         </div>
       </div>
     );
@@ -56,7 +59,7 @@ function HottestTracksChart({ data, timeWindow }) {
   return (
     <div className="bg-sp-dark rounded-lg p-6">
       <h2 className="text-xl font-bold text-sp-text mb-4">
-        Hottest Tracks (Last {timeWindow}h)
+        Hottest Tracks (Last {timeLabel})
       </h2>
       <ResponsiveContainer width="100%" height={400}>
         <BarChart

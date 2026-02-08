@@ -10,11 +10,14 @@ import {
 } from 'recharts';
 
 function PlaysTimelineChart({ data, hours }) {
+  // Format time period label
+  const timeLabel = hours >= 24 ? `${hours / 24}d` : `${hours}h`;
+
   if (!data || data.length === 0) {
     return (
       <div className="bg-sp-dark rounded-lg p-6">
         <h2 className="text-xl font-bold text-sp-text mb-4">
-          Timeline (Last {hours}h)
+          Timeline (Last {timeLabel})
         </h2>
         <div className="flex items-center justify-center h-[300px] text-sp-text-muted">
           <p>No data available</p>
@@ -23,16 +26,38 @@ function PlaysTimelineChart({ data, hours }) {
     );
   }
 
-  // Custom tooltip
+  // Custom tooltip with top tracks
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const dataPoint = payload[0].payload;
+      const hasTopTracks = dataPoint.topTracks && dataPoint.topTracks.length > 0;
+
       return (
-        <div className="bg-sp-dark border border-sp-light-gray rounded-lg p-3 shadow-lg">
-          <p className="text-sp-text-secondary text-xs">{dataPoint.label}</p>
-          <p className="text-sp-green font-bold text-sm">
+        <div className="bg-sp-dark border border-sp-light-gray rounded-lg p-3 shadow-lg max-w-xs">
+          <p className="text-sp-text-secondary text-xs mb-1">{dataPoint.label}</p>
+          <p className="text-sp-green font-bold text-sm mb-2">
             {dataPoint.plays} {dataPoint.plays === 1 ? 'play' : 'plays'}
           </p>
+
+          {hasTopTracks && (
+            <div className="mt-2 pt-2 border-t border-sp-gray">
+              <p className="text-sp-text-muted text-xs mb-1.5">Top tracks:</p>
+              <div className="space-y-1">
+                {dataPoint.topTracks.map((track, index) => (
+                  <div key={track.filename} className="text-xs">
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-sp-text-muted font-mono">{index + 1}.</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sp-text truncate">{track.title}</p>
+                        <p className="text-sp-text-secondary truncate">{track.artist}</p>
+                      </div>
+                      <span className="text-sp-green font-medium ml-1">×{track.count}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       );
     }
@@ -42,7 +67,7 @@ function PlaysTimelineChart({ data, hours }) {
   return (
     <div className="bg-sp-dark rounded-lg p-6">
       <h2 className="text-xl font-bold text-sp-text mb-4">
-        Timeline (Last {hours}h)
+        Timeline (Last {timeLabel})
       </h2>
       <ResponsiveContainer width="100%" height={300}>
         <AreaChart

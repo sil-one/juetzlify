@@ -6,7 +6,7 @@ import HottestTracksChart from '../components/admin-activity/HottestTracksChart'
 import PlaysTimelineChart from '../components/admin-activity/PlaysTimelineChart';
 import { API_BASE_URL } from '../utils/constants';
 
-const TIME_WINDOWS = [1, 4, 12, 24];
+const TIME_WINDOWS = [1, 4, 12, 24, 72, 168]; // hours: 1h, 4h, 12h, 24h, 3d, 7d
 
 function AdminActivityPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth('admin');
@@ -151,19 +151,26 @@ function AdminActivityPage() {
 
         {/* Time Period Tabs */}
         <div className="mb-6 flex gap-2 bg-sp-dark rounded-lg p-2">
-          {TIME_WINDOWS.map((hours) => (
-            <button
-              key={hours}
-              onClick={() => setSelectedTimeWindow(hours)}
-              className={`flex-1 px-4 py-2 rounded-md font-medium transition-all duration-200 ${
-                selectedTimeWindow === hours
-                  ? 'bg-sp-green text-sp-black'
-                  : 'text-sp-text-secondary hover:text-sp-text hover:bg-sp-gray'
-              }`}
-            >
-              {hours}h
-            </button>
-          ))}
+          {TIME_WINDOWS.map((hours) => {
+            // Format label: hours for <24h, days for >=24h
+            const label = hours >= 24
+              ? `${hours / 24}d`
+              : `${hours}h`;
+
+            return (
+              <button
+                key={hours}
+                onClick={() => setSelectedTimeWindow(hours)}
+                className={`flex-1 px-4 py-2 rounded-md font-medium transition-all duration-200 ${
+                  selectedTimeWindow === hours
+                    ? 'bg-sp-green text-sp-black'
+                    : 'text-sp-text-secondary hover:text-sp-text hover:bg-sp-gray'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Content Grid */}
