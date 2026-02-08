@@ -87,7 +87,7 @@ const WelcomeBanner = () => {
                 laift we d Chatzämüsiger wo diräkt as Friäkonzärt gend.
                 Chämed Sie immer wieder mal verbii, der Liäderbestand wird
                 über d Fasnacht üsbüwt und äs git vilicht nu anderi Iberraschigä!
-                D Benutzig vo derä Websitä under 0.5 Promille isch möglich, aber nid testet, das gaht üf Ihri eigeni Verantwortig.
+                D Benutzig vo derä Websitä under 0.5 Promille isch meglich, aber nid testet, das gaht üf Ihri eigeni Verantwortig.
                 <span className="block mt-3 text-sp-green font-semibold">
                   Viel Spass und scheeni Fasnacht!
                 </span>
