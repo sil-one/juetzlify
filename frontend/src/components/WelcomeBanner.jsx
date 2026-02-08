@@ -83,7 +83,10 @@ const WelcomeBanner = () => {
               </h2>
               <p className="text-sp-text-secondary text-base sm:text-lg leading-relaxed text-center max-w-3xl mx-auto">
                 Mit der Benutzig vo derä Sitä stimmet Sie zuä Jützlify üsschliässlich z benutzä wenn sie guäti Lüünä hend oder wend bercho.
-                Chämed Sie immer wieder mal verbii, der Liäderbestand wird über d Fasnacht stetig üsbüwt und äs git vilicht nu anderi Iberraschigä!
+                D Cookies wo mer ihnä underjublet deffet Sie bhaltä, d Brunzli sind diä Beschstä. Mer empfähled ä Internetverbindig wo mindestens so zuäverlässig
+                laift we d Chatzämüsiger wo diräkt as Friäkonzärt gend.
+                Chämed Sie immer wieder mal verbii, der Liäderbestand wird
+                über d Fasnacht üsbüwt und äs git vilicht nu anderi Iberraschigä!
                 D Benutzig vo derä Websitä under 0.5 Promille isch möglich, aber nid testet, das gaht üf Ihri eigeni Verantwortig.
                 <span className="block mt-3 text-sp-green font-semibold">
                   Viel Spass und scheeni Fasnacht!
