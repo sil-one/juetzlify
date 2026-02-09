@@ -1,46 +1,14 @@
 import fs from 'fs/promises';
-import fsSync from 'fs';
 import path from 'path';
 import lockfile from 'proper-lockfile';
 import { config } from '../config/config.js';
 
 const STATISTICS_FILE = path.join(config.dataPath, 'play-statistics.json');
 const STATISTICS_TMP = STATISTICS_FILE + '.tmp';
-const STATISTICS_LOCK = STATISTICS_FILE + '.lock';
 
 let statisticsCache = null;
 let pendingPlays = [];
 let batchWriterInterval = null;
-let statisticsWatcher = null;
-
-/**
- * Initialize file watcher for play-statistics.json
- * Ensures all PM2 workers see statistics updates in real-time
- */
-function initializeStatisticsWatcher() {
-  if (statisticsWatcher) return; // Already watching
-
-  try {
-    // Check if file exists before watching
-    if (!fsSync.existsSync(STATISTICS_FILE)) {
-      console.log('play-statistics.json not found yet, watcher will start when file is created');
-      return;
-    }
-
-    statisticsWatcher = fsSync.watch(STATISTICS_FILE, (eventType) => {
-      if (eventType === 'change') {
-        // Clear cache so next read loads fresh data from disk
-        // This synchronizes all PM2 workers
-        statisticsCache = null;
-        console.log('Statistics file changed, cache cleared across worker');
-      }
-    });
-
-    console.log('✓ Statistics file watcher initialized');
-  } catch (error) {
-    console.warn('⚠ Could not initialize statistics watcher:', error.message);
-  }
-}
 
 /**
  * Carnival 2026 date configuration
@@ -174,12 +142,24 @@ async function saveStatistics(statistics) {
 }
 
 /**
- * Get statistics (with caching)
+ * Get statistics (cached, used by recordPlay for fast non-blocking reads)
  */
 async function getStatistics() {
   if (statisticsCache) {
     return statisticsCache;
   }
+  const statistics = await loadStatistics();
+  statisticsCache = statistics;
+  return statistics;
+}
+
+/**
+ * Flush this worker's pending plays to disk, then read fresh from disk.
+ * Bypasses cache to ensure consistency across PM2 workers.
+ * Used by admin/stats endpoints.
+ */
+async function flushAndGetStatistics() {
+  await flushPendingPlays();
   const statistics = await loadStatistics();
   statisticsCache = statistics;
   return statistics;
@@ -222,7 +202,7 @@ export async function recordPlay(trackId, filename, visibility, title, artist, a
  * Get play count for a specific track (for admin panel)
  */
 export async function getTrackPlayCount(filename) {
-  const statistics = await getStatistics();
+  const statistics = await flushAndGetStatistics();
   const count = statistics.plays.filter((play) => play.filename === filename)
     .length;
   return count;
@@ -232,7 +212,7 @@ export async function getTrackPlayCount(filename) {
  * Get play counts for all tracks (for admin panel)
  */
 export async function getAllTrackPlayCounts() {
-  const statistics = await getStatistics();
+  const statistics = await flushAndGetStatistics();
   const counts = {};
 
   statistics.plays.forEach((play) => {
@@ -246,7 +226,7 @@ export async function getAllTrackPlayCounts() {
  * Get overall statistics
  */
 export async function getOverallStatistics() {
-  const statistics = await getStatistics();
+  const statistics = await flushAndGetStatistics();
   const today = new Date().toISOString().split('T')[0];
 
   // Calculate totals
@@ -296,7 +276,7 @@ export async function getOverallStatistics() {
  * Get carnival statistics
  */
 export async function getCarnivalStatistics(includePrivate = false) {
-  const statistics = await getStatistics();
+  const statistics = await flushAndGetStatistics();
   const { startDate, endDate, dayNames } = statistics.carnival2026;
 
   // Filter by carnival dates and visibility
@@ -421,13 +401,6 @@ export async function getCarnivalStatistics(includePrivate = false) {
 
 
 /**
- * Clear statistics cache
- */
-export function clearStatisticsCache() {
-  statisticsCache = null;
-}
-
-/**
  * Flush pending plays to disk (batch write with file locking)
  * Ensures atomic read-modify-write across PM2 instances
  */
@@ -515,9 +488,6 @@ export function initializeBatchWriter(intervalMs = 5000) {
   console.log(`Starting batch writer (interval: ${intervalMs}ms)`);
   batchWriterInterval = setInterval(flushPendingPlays, intervalMs);
 
-  // Initialize file watcher to sync statistics across PM2 workers
-  initializeStatisticsWatcher();
-
   // Ensure pending plays are flushed on process exit
   process.on('SIGTERM', () => {
     console.log('SIGTERM received, flushing pending plays...');
@@ -559,7 +529,7 @@ export async function stopBatchWriter() {
  * Get recent plays (sorted by timestamp descending)
  */
 export async function getRecentPlays(limit = 50) {
-  const statistics = await getStatistics();
+  const statistics = await flushAndGetStatistics();
 
   // Sort plays by timestamp descending and return top N
   return statistics.plays
@@ -571,7 +541,7 @@ export async function getRecentPlays(limit = 50) {
  * Get hottest tracks within a time window
  */
 export async function getHottestTracks(hoursAgo = 24) {
-  const statistics = await getStatistics();
+  const statistics = await flushAndGetStatistics();
   const cutoffTime = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
 
   // Filter plays within time window
@@ -614,7 +584,7 @@ export async function getHottestTracks(hoursAgo = 24) {
  * Get plays timeline (hourly buckets)
  */
 export async function getPlaysTimeline(hoursAgo = 24) {
-  const statistics = await getStatistics();
+  const statistics = await flushAndGetStatistics();
   const now = new Date();
   const cutoffTime = new Date(now.getTime() - hoursAgo * 60 * 60 * 1000);
 
