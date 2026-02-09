@@ -42,6 +42,7 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
       return 'off';
     }
   });
+  const [playCycle, setPlayCycle] = useState(0);
   const lastBackwardTimeRef = useRef(0);
   const playRecordedRef = useRef(false);
   const playTimerRef = useRef(null);
@@ -240,7 +241,7 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
         playTimerRef.current = null;
       }
     };
-  }, [isPlaying, currentTrack, isOnline]);
+  }, [isPlaying, currentTrack, isOnline, playCycle]);
 
   const playTrack = (track, autoplay = true) => {
     shouldAutoPlayRef.current = autoplay;
@@ -468,6 +469,24 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
   };
 
   const handleEnded = () => {
+    // Repeat one: restart immediately without toggling isPlaying off/on,
+    // so the play tracking useEffect sees a fresh timer cycle
+    if (repeatMode === 'one' && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      setCurrentTime(0);
+      playRecordedRef.current = false;
+      setPlayCycle(c => c + 1); // Force play tracking effect to restart its 15s timer
+      audioRef.current.play().catch(error => {
+        console.error('Repeat one playback error:', error);
+        setIsPlaying(false);
+      });
+      setIsPlaying(true);
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'playing';
+      }
+      return;
+    }
+
     setIsPlaying(false);
     setCurrentTime(0);
     // Update Media Session to paused state
@@ -475,13 +494,10 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
       navigator.mediaSession.playbackState = 'paused';
     }
     // Auto-play next track (respects repeat mode in playNext logic)
-    // Repeat one: replay same track
     // Repeat all: continue to next track (wraps around)
     // Repeat queue: loop queue forever
     // Repeat off: play next if available, stop at end
-    if (repeatMode === 'one') {
-      playNext(); // Will replay current track
-    } else if (queue.length > 0 || repeatMode === 'all' || repeatMode === 'queue' || isShuffleOn) {
+    if (queue.length > 0 || repeatMode === 'all' || repeatMode === 'queue' || isShuffleOn) {
       playNext();
     } else {
       // Normal behavior: play next track or stop at end

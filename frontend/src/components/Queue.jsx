@@ -85,7 +85,7 @@ const SortableQueueItem = ({ track, index, onRemove, onPlayTrack }) => {
   );
 };
 
-const Queue = ({ queue, onRemove, onClear, onPlayTrack, onReorder }) => {
+const Queue = ({ queue, onRemove, onClear, onPlayTrack, onReorder, repeatMode }) => {
   // Set up sensors for drag and drop (mouse, touch, and keyboard)
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -120,7 +120,7 @@ const Queue = ({ queue, onRemove, onClear, onPlayTrack, onReorder }) => {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-4 pb-4">
+    <div className={`w-full max-w-2xl mx-auto px-4 pb-4 ${repeatMode === 'queue' ? 'border-l-2 border-sp-green/60' : ''}`}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-sp-text">As negschts ({queue.length})</h2>
         <button

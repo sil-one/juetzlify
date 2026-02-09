@@ -134,6 +134,7 @@ const PublicPage = () => {
         onClear={clearQueue}
         onPlayTrack={playTrack}
         onReorder={reorderQueue}
+        repeatMode={repeatMode}
       />
       <div className={isScrolledPast ? 'pb-24' : ''}>
         <TrackList
