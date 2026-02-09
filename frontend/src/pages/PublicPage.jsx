@@ -11,6 +11,7 @@ import StickyPlayerBar from '../components/StickyPlayerBar';
 import FeaturedShowOverlay from '../components/FeaturedShowOverlay';
 import WelcomeBanner from '../components/WelcomeBanner';
 import CopyrightFooter from '../components/CopyrightFooter';
+import LyricsOverlay from '../components/LyricsOverlay';
 import OfflineIndicator from '../components/OfflineIndicator';
 import { API_BASE_URL } from '../utils/constants';
 
@@ -22,6 +23,7 @@ const PublicPage = () => {
   const [tracks, setTracks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [lyricsOpen, setLyricsOpen] = useState(false);
 
   const { syncOfflinePlays } = useDownloads();
 
@@ -127,6 +129,8 @@ const PublicPage = () => {
         repeatMode={repeatMode}
         onToggleShuffle={toggleShuffle}
         onToggleRepeat={toggleRepeat}
+        onToggleLyrics={() => setLyricsOpen(!lyricsOpen)}
+        lyricsOpen={lyricsOpen}
       />
       <Queue
         queue={queue}
@@ -168,6 +172,13 @@ const PublicPage = () => {
 
       {/* Welcome banner */}
       <WelcomeBanner />
+
+      {/* Lyrics overlay */}
+      <LyricsOverlay
+        track={currentTrack}
+        isOpen={lyricsOpen}
+        onClose={() => setLyricsOpen(false)}
+      />
     </div>
   );
 };

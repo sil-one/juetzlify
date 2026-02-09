@@ -21,6 +21,8 @@ const AudioPlayer = ({
   repeatMode,
   onToggleShuffle,
   onToggleRepeat,
+  onToggleLyrics,
+  lyricsOpen,
 }) => {
   // Extract dominant color from current track's album art
   const { color: albumColor } = useColorExtractor(currentTrack?.albumArt);
@@ -214,14 +216,30 @@ const AudioPlayer = ({
                 </button>
               </div>
 
-              {/* Download button row */}
-              <div className="flex justify-center items-center mt-2 md:mt-4">
+              {/* Download & Lyrics button row */}
+              <div className="flex justify-center items-center gap-4 mt-2 md:mt-4">
                 <DownloadButton
                   trackId={currentTrack.id}
                   track={currentTrack}
                   size="medium"
                   showLabel={true}
                 />
+                {onToggleLyrics && (
+                  <button
+                    onClick={onToggleLyrics}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all text-sm ${
+                      lyricsOpen
+                        ? 'bg-sp-green/20 text-sp-green'
+                        : 'text-sp-text-secondary hover:text-sp-text hover:bg-sp-gray'
+                    }`}
+                    title="Text"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h7" />
+                    </svg>
+                    <span>Text</span>
+                  </button>
+                )}
               </div>
             </div>
           </>

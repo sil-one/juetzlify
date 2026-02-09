@@ -28,7 +28,10 @@
       "Bash(docker build:*)",
       "Bash(npm run build:*)",
       "Bash(echo:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(wc:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx vite build:*)"
     ]
   }
 }

@@ -1,6 +1,7 @@
 import express from 'express';
 import { getAllTracks, refreshCache, getTrackById } from '../services/trackService.js';
 import { recordPlay } from '../services/playStatisticsService.js';
+import { getLyrics } from '../services/lyricsService.js';
 
 const router = express.Router();
 
@@ -95,6 +96,45 @@ router.post('/:trackId/play', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to record play',
+    });
+  }
+});
+
+/**
+ * GET /api/tracks/:trackId/lyrics
+ * Get lyrics for a track (public)
+ */
+router.get('/:trackId/lyrics', async (req, res) => {
+  try {
+    const { trackId } = req.params;
+
+    // Resolve trackId to filename
+    const track = await getTrackById(trackId);
+    if (!track) {
+      return res.status(404).json({
+        success: false,
+        error: 'Track not found',
+      });
+    }
+
+    const lyrics = await getLyrics(track.filename);
+
+    if (!lyrics) {
+      return res.status(404).json({
+        success: false,
+        error: 'No lyrics available',
+      });
+    }
+
+    res.json({
+      success: true,
+      lyrics,
+    });
+  } catch (error) {
+    console.error('Error fetching lyrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch lyrics',
     });
   }
 });

@@ -27,6 +27,7 @@ import {
   getFeaturedShowInterval,
   setFeaturedShowInterval,
 } from '../services/settingsService.js';
+import { getLyrics, setLyrics, getAllLyricsMetadata } from '../services/lyricsService.js';
 import { config } from '../config/config.js';
 import { requireAdmin } from '../middleware/authMiddleware.js';
 
@@ -168,12 +169,21 @@ router.post('/migrate', async (req, res) => {
  */
 router.get('/tracks', async (req, res) => {
   try {
-    const tracks = await getAllTracks('admin');
+    const [tracks, lyricsMetadata] = await Promise.all([
+      getAllTracks('admin'),
+      getAllLyricsMetadata(),
+    ]);
+
+    // Add hasLyrics flag to each track
+    const tracksWithLyrics = tracks.map(track => ({
+      ...track,
+      hasLyrics: !!lyricsMetadata[track.filename],
+    }));
 
     res.json({
       success: true,
-      tracks,
-      count: tracks.length,
+      tracks: tracksWithLyrics,
+      count: tracksWithLyrics.length,
     });
   } catch (error) {
     console.error('Error fetching admin tracks:', error);
@@ -574,6 +584,68 @@ router.post('/featured-show-interval', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to set featured show interval',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/admin/tracks/:filename/lyrics
+ * Get lyrics for a specific track
+ */
+router.get('/tracks/:filename/lyrics', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const decodedFilename = decodeURIComponent(filename);
+    const lyrics = await getLyrics(decodedFilename);
+
+    res.json({
+      success: true,
+      lyrics: lyrics || '',
+    });
+  } catch (error) {
+    console.error('Error fetching lyrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch lyrics',
+    });
+  }
+});
+
+/**
+ * PUT /api/admin/tracks/:filename/lyrics
+ * Update lyrics for a specific track
+ */
+router.put('/tracks/:filename/lyrics', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const { lyrics } = req.body;
+    const decodedFilename = decodeURIComponent(filename);
+
+    if (typeof lyrics !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Lyrics must be a string',
+      });
+    }
+
+    if (lyrics.trim() === '') {
+      // Empty lyrics = delete
+      const { deleteLyrics: deleteLyricsFn } = await import('../services/lyricsService.js');
+      await deleteLyricsFn(decodedFilename);
+    } else {
+      await setLyrics(decodedFilename, lyrics);
+    }
+
+    res.json({
+      success: true,
+      message: 'Lyrics updated',
+    });
+  } catch (error) {
+    console.error('Error updating lyrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update lyrics',
       message: error.message,
     });
   }

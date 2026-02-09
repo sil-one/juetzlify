@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import PasswordPrompt from '../components/PasswordPrompt';
 import VisibilitySlider from '../components/VisibilitySlider';
+import LyricsModal from '../components/LyricsModal';
 import { FEATURED_SHOWS } from '../utils/featuredShows';
 import { API_BASE_URL } from '../utils/constants';
 
@@ -25,6 +26,7 @@ const AdminPage = () => {
   const [featuredShowInterval, setFeaturedShowInterval] = useState(60);
   const [intervalInputValue, setIntervalInputValue] = useState('60');
   const [isUpdatingInterval, setIsUpdatingInterval] = useState(false);
+  const [lyricsTrack, setLyricsTrack] = useState(null);
 
   // Get auth headers for API requests
   const getAuthHeaders = () => {
@@ -901,6 +903,21 @@ const AdminPage = () => {
                       />
                     </div>
 
+                    {/* Lyrics Button */}
+                    <button
+                      onClick={() => setLyricsTrack(track)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        track.hasLyrics
+                          ? 'text-sp-green hover:text-sp-green/80 hover:bg-sp-green/10'
+                          : 'text-sp-text-muted hover:text-sp-text hover:bg-sp-light-gray'
+                      }`}
+                      title={track.hasLyrics ? 'Edit lyrics' : 'Add lyrics'}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h7" />
+                      </svg>
+                    </button>
+
                     {/* Delete Button */}
                     <button
                       onClick={() => deleteTrack(track.filename, track.title)}
@@ -940,6 +957,25 @@ const AdminPage = () => {
           </a>
         </div>
       </div>
+
+      {/* Lyrics Modal */}
+      {lyricsTrack && (
+        <LyricsModal
+          track={lyricsTrack}
+          onClose={(saved) => {
+            setLyricsTrack(null);
+            if (saved) {
+              // Update hasLyrics in local state
+              setTracks(tracks.map(t =>
+                t.filename === lyricsTrack.filename
+                  ? { ...t, hasLyrics: true }
+                  : t
+              ));
+            }
+          }}
+          getAuthHeaders={getAuthHeaders}
+        />
+      )}
     </div>
   );
 };

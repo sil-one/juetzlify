@@ -10,6 +10,7 @@ import Queue from '../components/Queue';
 import PasswordPrompt from '../components/PasswordPrompt';
 import StickyPlayerBar from '../components/StickyPlayerBar';
 import FeaturedShowOverlay from '../components/FeaturedShowOverlay';
+import LyricsOverlay from '../components/LyricsOverlay';
 import OfflineIndicator from '../components/OfflineIndicator';
 import { API_BASE_URL } from '../utils/constants';
 
@@ -19,6 +20,7 @@ const PrivatePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [authError, setAuthError] = useState(null);
+  const [lyricsOpen, setLyricsOpen] = useState(false);
 
   const { syncOfflinePlays } = useDownloads();
 
@@ -145,6 +147,8 @@ const PrivatePage = () => {
         repeatMode={repeatMode}
         onToggleShuffle={toggleShuffle}
         onToggleRepeat={toggleRepeat}
+        onToggleLyrics={() => setLyricsOpen(!lyricsOpen)}
+        lyricsOpen={lyricsOpen}
       />
       <Queue
         queue={queue}
@@ -181,6 +185,13 @@ const PrivatePage = () => {
 
       {/* Featured show overlay */}
       {shouldShowShow && <FeaturedShowOverlay show={selectedShow} onDismiss={dismissShow} />}
+
+      {/* Lyrics overlay */}
+      <LyricsOverlay
+        track={currentTrack}
+        isOpen={lyricsOpen}
+        onClose={() => setLyricsOpen(false)}
+      />
     </div>
   );
 };
