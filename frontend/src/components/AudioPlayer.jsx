@@ -232,12 +232,12 @@ const AudioPlayer = ({
                         ? 'bg-sp-green/20 text-sp-green'
                         : 'text-sp-text-secondary hover:text-sp-text hover:bg-sp-gray'
                     }`}
-                    title="Text"
+                    title="Lyrics"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h7" />
                     </svg>
-                    <span>Text</span>
+                    <span>Lyrics</span>
                   </button>
                 )}
               </div>
