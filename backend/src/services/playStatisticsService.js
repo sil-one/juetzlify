@@ -623,12 +623,34 @@ export async function getPlaysTimeline(hoursAgo = 24) {
     return new Date(play.timestamp) >= cutoffTime;
   });
 
-  // Create hourly buckets
+  // Determine bucket size based on time window to keep data points manageable
+  let bucketSizeHours = 1; // default: hourly buckets
+  if (hoursAgo > 24 && hoursAgo <= 72) {
+    bucketSizeHours = 4; // 3d: 4-hour buckets → 18 points
+  } else if (hoursAgo > 72) {
+    bucketSizeHours = 12; // 7d: 12-hour buckets → 14 points
+  }
+
+  const numBuckets = Math.ceil(hoursAgo / bucketSizeHours);
+
+  // Create buckets
   const buckets = [];
-  for (let i = hoursAgo - 1; i >= 0; i--) {
-    const bucketTime = new Date(now.getTime() - i * 60 * 60 * 1000);
+  for (let i = numBuckets - 1; i >= 0; i--) {
+    const bucketTime = new Date(now.getTime() - i * bucketSizeHours * 60 * 60 * 1000);
     const hour = bucketTime.getHours();
-    const label = `${hour.toString().padStart(2, '0')}:00`;
+    const day = bucketTime.getDate();
+    const month = bucketTime.getMonth() + 1;
+
+    let label;
+    if (bucketSizeHours >= 12) {
+      // Show date + time for large buckets: "9.2 12:00"
+      label = `${day}.${month} ${hour.toString().padStart(2, '0')}:00`;
+    } else if (bucketSizeHours >= 4) {
+      // Show date + time for medium buckets: "9.2 08:00"
+      label = `${day}.${month} ${hour.toString().padStart(2, '0')}:00`;
+    } else {
+      label = `${hour.toString().padStart(2, '0')}:00`;
+    }
 
     buckets.push({
       hour,
@@ -642,8 +664,8 @@ export async function getPlaysTimeline(hoursAgo = 24) {
   // Fill buckets with play counts and track data
   recentPlays.forEach((play) => {
     const playTime = new Date(play.timestamp);
-    const hoursDiff = Math.floor((now - playTime) / (60 * 60 * 1000));
-    const bucketIndex = hoursAgo - 1 - hoursDiff;
+    const hoursDiff = (now - playTime) / (60 * 60 * 1000);
+    const bucketIndex = numBuckets - 1 - Math.floor(hoursDiff / bucketSizeHours);
 
     if (bucketIndex >= 0 && bucketIndex < buckets.length) {
       buckets[bucketIndex].plays++;
@@ -669,7 +691,7 @@ export async function getPlaysTimeline(hoursAgo = 24) {
         ...data,
       }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 3); // Keep only top 3 tracks per hour
+      .slice(0, 3); // Keep only top 3 tracks per bucket
 
     // Remove the raw tracks object (we only need topTracks in response)
     delete bucket.tracks;

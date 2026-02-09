@@ -66,9 +66,8 @@ function PlaysTimelineChart({ data, hours }) {
 
   // Calculate appropriate tick interval based on data length
   const getTickInterval = () => {
-    if (data.length <= 24) return 'preserveStartEnd'; // Show fewer ticks for 1-24h
-    if (data.length <= 72) return Math.floor(data.length / 12); // ~12 ticks for 3d
-    return Math.floor(data.length / 14); // ~14 ticks for 7d
+    if (data.length <= 24) return 'preserveStartEnd'; // Show all ticks for ≤24 points
+    return Math.floor(data.length / 12); // ~12 ticks for larger windows
   };
 
   return (
