@@ -1,5 +1,9 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import useColorExtractor from '../hooks/useColorExtractor';
+import useEasterEgg from '../hooks/useEasterEgg';
+import useAccelerometer from '../hooks/useAccelerometer';
+import useLiquidAnimation from '../hooks/useLiquidAnimation';
 import MarqueeText from './MarqueeText';
 
 const StickyPlayerBar = ({
@@ -18,19 +22,23 @@ const StickyPlayerBar = ({
 }) => {
   // Extract dominant color from current track's album art
   const { color: albumColor } = useColorExtractor(currentTrack?.albumArt);
+  const { isActive: easterEggActive, showPopup, handleTap, dismissPopup } = useEasterEgg();
+  const { gravityX, requestPermission } = useAccelerometer(easterEggActive);
 
   const progressPercent = duration ? (currentTime / duration) * 100 : 0;
+  const { clipPath: liquidClipPath, isLiquid } = useLiquidAnimation(easterEggActive, gravityX, progressPercent);
 
-  // Dynamic gradient color based on album art
-  const gradientColor = albumColor
-    ? albumColor.vibrantRgba(0.3)
-    : 'rgba(46, 204, 113, 0.3)';
+  const handleDismissPopup = async () => {
+    await requestPermission();
+    dismissPopup();
+  };
 
   const accentColor = albumColor ? albumColor.vibrant : '#2ECC71';
 
   if (!currentTrack) return null;
 
   return (
+    <>
     <div
       className={`fixed z-40 transition-all duration-300 ease-out
         bottom-3 left-3 right-3 rounded-xl
@@ -40,6 +48,7 @@ const StickyPlayerBar = ({
         height: '72px',
         marginBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
+      onClick={handleTap}
     >
       {/* Background with glass effect, accent tint, and progress fill */}
       <div
@@ -50,12 +59,13 @@ const StickyPlayerBar = ({
           border: '1px solid rgba(255, 255, 255, 0.1)',
         }}
       >
-        {/* Progress fill — deeper accent color fills left to right */}
+        {/* Progress fill — deeper accent color fills left to right (or bottom to top in liquid mode) */}
         <div
-          className="absolute inset-0 transition-[width] duration-200"
+          className={`absolute inset-0 ${isLiquid ? '' : 'transition-[width] duration-200'}`}
           style={{
-            width: `${progressPercent}%`,
+            width: isLiquid ? '100%' : `${progressPercent}%`,
             background: `linear-gradient(to right, ${albumColor ? albumColor.vibrantRgba(0.3) : 'rgba(46, 204, 113, 0.25)'}, ${albumColor ? albumColor.vibrantRgba(0.15) : 'rgba(46, 204, 113, 0.12)'})`,
+            clipPath: liquidClipPath,
           }}
         />
       </div>
@@ -203,6 +213,44 @@ const StickyPlayerBar = ({
       </div>
 
     </div>
+
+    {/* Easter egg popup — portaled to body to escape transform containing block */}
+    {showPopup && createPortal(
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div
+          className="mx-6 max-w-sm w-full rounded-2xl p-6 text-center"
+          style={{
+            background: 'rgba(24, 24, 24, 0.9)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(20px)',
+          }}
+        >
+          <div className="text-4xl mb-4">🎵💔</div>
+          <p
+            className="text-lg font-semibold mb-6"
+            style={{ color: accentColor }}
+          >
+            Ez hesch mich kabutt gmacht :(
+          </p>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDismissPopup();
+            }}
+            className="px-6 py-2 rounded-full text-white text-sm font-medium transition-all duration-200 active:scale-95"
+            style={{
+              background: accentColor,
+              boxShadow: `0 4px 16px ${albumColor ? albumColor.vibrantRgba(0.5) : 'rgba(46, 204, 113, 0.4)'}`,
+            }}
+          >
+            Sorry...
+          </button>
+        </div>
+      </div>,
+      document.body
+    )}
+
+    </>
   );
 };
 
