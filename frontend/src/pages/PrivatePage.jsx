@@ -158,7 +158,7 @@ const PrivatePage = () => {
         onReorder={reorderQueue}
         repeatMode={repeatMode}
       />
-      <div className={isScrolledPast ? 'pb-24' : ''}>
+      <div className={isScrolledPast ? 'pb-28 md:pb-24' : ''}>
         <TrackList
           tracks={tracks}
           currentTrack={currentTrack}

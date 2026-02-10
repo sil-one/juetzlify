@@ -32,22 +32,33 @@ const StickyPlayerBar = ({
 
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-40 transition-transform duration-300 ease-out ${
-        isVisible ? 'translate-y-0' : 'translate-y-full'
-      }`}
+      className={`fixed z-40 transition-all duration-300 ease-out
+        bottom-3 left-3 right-3 rounded-xl
+        md:bottom-0 md:left-0 md:right-0 md:rounded-none
+        ${isVisible ? 'translate-y-0' : 'translate-y-[200%]'}`}
       style={{
         height: '72px',
+        marginBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
     >
-      {/* Background with glass effect */}
+      {/* Background with glass effect, accent tint, and progress fill */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 rounded-xl md:rounded-none overflow-hidden"
         style={{
-          background: `linear-gradient(to right, ${gradientColor}, rgba(18, 18, 18, 0.95))`,
+          background: `linear-gradient(to right, ${albumColor ? albumColor.vibrantRgba(0.1) : 'rgba(46, 204, 113, 0.08)'}, ${albumColor ? albumColor.vibrantRgba(0.05) : 'rgba(46, 204, 113, 0.04)'})`,
           backdropFilter: 'blur(10px)',
-          borderTop: `1px solid rgba(255, 255, 255, 0.1)`,
+          border: '1px solid rgba(255, 255, 255, 0.1)',
         }}
-      />
+      >
+        {/* Progress fill — deeper accent color fills left to right */}
+        <div
+          className="absolute inset-0 transition-[width] duration-200"
+          style={{
+            width: `${progressPercent}%`,
+            background: `linear-gradient(to right, ${albumColor ? albumColor.vibrantRgba(0.3) : 'rgba(46, 204, 113, 0.25)'}, ${albumColor ? albumColor.vibrantRgba(0.15) : 'rgba(46, 204, 113, 0.12)'})`,
+          }}
+        />
+      </div>
 
       {/* Content */}
       <div className="relative h-full flex items-center px-4 gap-3">
@@ -191,20 +202,6 @@ const StickyPlayerBar = ({
         </div>
       </div>
 
-      {/* Progress bar at bottom */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-1 bg-sp-gray"
-        style={{ zIndex: 1 }}
-      >
-        <div
-          className="h-full transition-all duration-200"
-          style={{
-            width: `${progressPercent}%`,
-            background: accentColor,
-            boxShadow: `0 0 8px ${albumColor ? albumColor.vibrantRgba(0.6) : 'rgba(46, 204, 113, 0.5)'}`,
-          }}
-        />
-      </div>
     </div>
   );
 };
