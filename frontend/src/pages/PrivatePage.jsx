@@ -47,8 +47,6 @@ const PrivatePage = () => {
     handleTimeUpdate,
     handleLoadedMetadata,
     handleEnded,
-    handleAudioPlaying,
-    handleAudioPause,
   } = useAudioPlayer(tracks, syncOfflinePlays);
 
   // Detect scroll position for sticky player
@@ -143,8 +141,6 @@ const PrivatePage = () => {
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
-        onPlaying={handleAudioPlaying}
-        onPause={handleAudioPause}
         onPlayNext={playNext}
         onPlayPrevious={playPrevious}
         isShuffleOn={isShuffleOn}

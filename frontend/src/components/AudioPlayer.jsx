@@ -15,8 +15,6 @@ const AudioPlayer = ({
   onTimeUpdate,
   onLoadedMetadata,
   onEnded,
-  onPlaying,
-  onPause,
   onPlayNext,
   onPlayPrevious,
   isShuffleOn,
@@ -85,8 +83,6 @@ const AudioPlayer = ({
               onTimeUpdate={onTimeUpdate}
               onLoadedMetadata={onLoadedMetadata}
               onEnded={onEnded}
-              onPlaying={onPlaying}
-              onPause={onPause}
             />
 
             {/* Player controls */}
