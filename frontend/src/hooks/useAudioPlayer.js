@@ -47,6 +47,7 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
   const playRecordedRef = useRef(false);
   const playTimerRef = useRef(null);
   const shouldAutoPlayRef = useRef(true);
+  const changingTrackRef = useRef(false);
   const lastTimeUpdateRef = useRef(0);
   const lastPositionUpdateRef = useRef(0);
   const isOnline = useOnlineStatus();
@@ -54,6 +55,9 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
   // Update audio element when track changes
   useEffect(() => {
     if (currentTrack && audioRef.current) {
+      // Suppress handleAudioPause during source change (old source fires pause)
+      changingTrackRef.current = true;
+
       const streamUrl = API_BASE_URL.replace('/api', '') + `/api/stream/${currentTrack.id}`;
       audioRef.current.src = streamUrl;
       audioRef.current.load();
@@ -62,10 +66,12 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
       if (shouldAutoPlayRef.current) {
         audioRef.current.play().catch(error => {
           console.error('Playback error:', error);
+          changingTrackRef.current = false;
           setIsPlaying(false);
         });
         setIsPlaying(true);
       } else {
+        changingTrackRef.current = false;
         setIsPlaying(false);
         // Reset to true after initial load
         shouldAutoPlayRef.current = true;
@@ -425,38 +431,23 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
       play: () => {
         if (audioRef.current) {
           const audio = audioRef.current;
-          audio.play()
-            .then(() => {
-              setIsPlaying(true);
-              navigator.mediaSession.playbackState = 'playing';
-              updateMediaSessionPosition(audio);
-            })
-            .catch(() => {
-              // iOS can suspend/unload the audio source when backgrounded.
-              // Reload from the current position and retry.
-              const pos = audio.currentTime;
-              audio.load();
-              audio.currentTime = pos;
-              audio.play()
-                .then(() => {
-                  setIsPlaying(true);
-                  navigator.mediaSession.playbackState = 'playing';
-                  updateMediaSessionPosition(audio);
-                })
-                .catch(err => {
-                  console.error('Media Session play failed after reload:', err);
-                  setIsPlaying(false);
-                  navigator.mediaSession.playbackState = 'paused';
-                });
+          // Don't set isPlaying here — the audio element's 'playing' event
+          // is the source of truth (iOS can resolve play() without actually playing).
+          audio.play().catch(() => {
+            // Reload from the current position and retry
+            const pos = audio.currentTime;
+            audio.load();
+            audio.currentTime = pos;
+            audio.play().catch(err => {
+              console.error('Media Session play failed after reload:', err);
             });
+          });
         }
       },
       pause: () => {
         if (audioRef.current) {
           audioRef.current.pause();
-          setIsPlaying(false);
-          navigator.mediaSession.playbackState = 'paused';
-          updateMediaSessionPosition(audioRef.current);
+          // State synced by audio 'pause' event handler
         }
       },
       previoustrack: () => playPrevious(),
@@ -523,6 +514,27 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
     if (now - lastPositionUpdateRef.current >= 5000) {
       updateMediaSessionPosition(e.target);
       lastPositionUpdateRef.current = now;
+    }
+  };
+
+  // Source-of-truth event handlers for actual audio element state.
+  // These catch iOS silently pausing after play() resolves.
+  const handleAudioPlaying = () => {
+    changingTrackRef.current = false;
+    setIsPlaying(true);
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = 'playing';
+    }
+  };
+
+  const handleAudioPause = () => {
+    // Ignore pause events during track changes (old source fires pause when swapped)
+    if (changingTrackRef.current) return;
+    // Ignore if audio ended — handleEnded manages that flow
+    if (audioRef.current?.ended) return;
+    setIsPlaying(false);
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = 'paused';
     }
   };
 
@@ -611,5 +623,7 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
     handleTimeUpdate,
     handleLoadedMetadata,
     handleEnded,
+    handleAudioPlaying,
+    handleAudioPause,
   };
 };
