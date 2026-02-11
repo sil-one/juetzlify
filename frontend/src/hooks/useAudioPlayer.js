@@ -47,7 +47,6 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
   const playRecordedRef = useRef(false);
   const playTimerRef = useRef(null);
   const shouldAutoPlayRef = useRef(true);
-  const lastTimeUpdateRef = useRef(0);
   const lastPositionUpdateRef = useRef(0);
   const isOnline = useOnlineStatus();
 
@@ -530,11 +529,10 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
   const handleTimeUpdate = (e) => {
     const now = Date.now();
 
-    // Skip UI state updates when page is hidden (screen off / app backgrounded)
-    // to avoid unnecessary React re-renders that drain battery.
-    if (!document.hidden && now - lastTimeUpdateRef.current >= 1000) {
+    // Full-speed updates when visible (smooth progress bar),
+    // skip entirely when hidden (zero re-renders, saves battery).
+    if (!document.hidden) {
       setCurrentTime(e.target.currentTime);
-      lastTimeUpdateRef.current = now;
     }
 
     // Update lock screen position every ~5 seconds (still needed when backgrounded)
