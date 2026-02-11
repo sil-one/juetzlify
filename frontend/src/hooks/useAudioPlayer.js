@@ -282,22 +282,8 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
           updateMediaSessionPosition(audio);
         })
         .catch(() => {
-          // iOS recovery: reload from current position and retry
-          const pos = audio.currentTime;
-          audio.load();
-          audio.currentTime = pos;
-          audio.play()
-            .then(() => {
-              setIsPlaying(true);
-              if ('mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = 'playing';
-              }
-              updateMediaSessionPosition(audio);
-            })
-            .catch(err => {
-              console.error('Playback failed after reload:', err);
-              setIsPlaying(false);
-            });
+          // iOS recovery: full source re-initialization
+          recoverAndPlay(audio, audio.currentTime);
         });
     }
   };
@@ -434,37 +420,13 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
               // Verify after a short delay and recover if needed.
               setTimeout(() => {
                 if (audio.paused && !audio.ended) {
-                  audio.load();
-                  audio.currentTime = pos;
-                  audio.play()
-                    .then(() => {
-                      setIsPlaying(true);
-                      navigator.mediaSession.playbackState = 'playing';
-                      updateMediaSessionPosition(audio);
-                    })
-                    .catch(err => {
-                      console.error('Media Session play recovery failed:', err);
-                      setIsPlaying(false);
-                      navigator.mediaSession.playbackState = 'paused';
-                    });
+                  recoverAndPlay(audio, pos);
                 }
-              }, 250);
+              }, 300);
             })
             .catch(() => {
-              // play() rejected — reload from current position and retry
-              audio.load();
-              audio.currentTime = pos;
-              audio.play()
-                .then(() => {
-                  setIsPlaying(true);
-                  navigator.mediaSession.playbackState = 'playing';
-                  updateMediaSessionPosition(audio);
-                })
-                .catch(err => {
-                  console.error('Media Session play failed after reload:', err);
-                  setIsPlaying(false);
-                  navigator.mediaSession.playbackState = 'paused';
-                });
+              // play() rejected — full source re-initialization
+              recoverAndPlay(audio, pos);
             });
         }
       },
@@ -524,6 +486,50 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
         console.warn('Failed to update Media Session position state:', error);
       }
     }
+  };
+
+  // Recover audio playback after iOS suspension.
+  // iOS standalone PWA (Add to Home Screen) severs the audio session
+  // connection during background suspension. Unlike Safari tabs where
+  // audio.load() suffices, standalone mode needs a full source
+  // re-initialization (re-setting audio.src) to reconnect.
+  const recoverAndPlay = (audio, position) => {
+    const src = audio.src;
+    if (!src) return;
+
+    audio.src = src;
+    audio.load();
+
+    let done = false;
+    const attemptPlay = () => {
+      if (done) return;
+      done = true;
+      audio.currentTime = position;
+      audio.play()
+        .then(() => {
+          setIsPlaying(true);
+          if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'playing';
+          }
+          updateMediaSessionPosition(audio);
+        })
+        .catch(err => {
+          console.error('[Jützlify] Audio recovery failed:', err);
+          setIsPlaying(false);
+          if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused';
+          }
+        });
+    };
+
+    audio.addEventListener('canplay', attemptPlay, { once: true });
+    // Fallback: try playing after timeout if canplay doesn't fire
+    setTimeout(() => {
+      audio.removeEventListener('canplay', attemptPlay);
+      if (!done && audio.paused && !audio.ended) {
+        attemptPlay();
+      }
+    }, 3000);
   };
 
   const handleTimeUpdate = (e) => {
