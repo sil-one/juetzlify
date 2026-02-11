@@ -48,6 +48,7 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
   const playTimerRef = useRef(null);
   const shouldAutoPlayRef = useRef(true);
   const lastPositionUpdateRef = useRef(0);
+  const audioContextRef = useRef(null);
   const isOnline = useOnlineStatus();
 
   // Update audio element when track changes
@@ -273,6 +274,7 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
       }
       updateMediaSessionPosition(audio);
     } else {
+      ensureAudioSession();
       audio.play()
         .then(() => {
           setIsPlaying(true);
@@ -411,18 +413,22 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
         if (audioRef.current) {
           const audio = audioRef.current;
           const pos = audio.currentTime;
+          // Re-activate iOS audio session before play attempt
+          ensureAudioSession();
           audio.play()
             .then(() => {
               setIsPlaying(true);
               navigator.mediaSession.playbackState = 'playing';
               updateMediaSessionPosition(audio);
-              // iOS: play() can resolve without actually playing.
-              // Verify after a short delay and recover if needed.
+              // iOS standalone PWA: play() can resolve while the audio
+              // session is interrupted (paused=false but no sound).
+              // Detect by checking if currentTime actually advances.
+              const t0 = audio.currentTime;
               setTimeout(() => {
-                if (audio.paused && !audio.ended) {
+                if (!audio.ended && Math.abs(audio.currentTime - t0) < 0.01) {
                   recoverAndPlay(audio, pos);
                 }
-              }, 300);
+              }, 500);
             })
             .catch(() => {
               // play() rejected — full source re-initialization
@@ -488,14 +494,32 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
     }
   };
 
+  // Re-activate iOS audio session. iOS standalone PWA (Add to Home Screen)
+  // can "interrupt" the audio session when backgrounded. The HTML audio
+  // element reports paused=false and play() resolves, but no sound comes
+  // out. Resuming an AudioContext re-establishes the OS-level audio route.
+  const ensureAudioSession = () => {
+    try {
+      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContextRef.current.state !== 'running') {
+        audioContextRef.current.resume();
+      }
+    } catch (e) {
+      // AudioContext not available
+    }
+  };
+
   // Recover audio playback after iOS suspension.
-  // iOS standalone PWA (Add to Home Screen) severs the audio session
-  // connection during background suspension. Unlike Safari tabs where
-  // audio.load() suffices, standalone mode needs a full source
-  // re-initialization (re-setting audio.src) to reconnect.
+  // Pauses first, re-activates the audio session, then fully
+  // re-initializes the audio source and waits for canplay.
   const recoverAndPlay = (audio, position) => {
     const src = audio.src;
     if (!src) return;
+
+    audio.pause();
+    ensureAudioSession();
 
     audio.src = src;
     audio.load();
