@@ -203,6 +203,8 @@ export function useFeaturedShowOverlay(pageType) {
               nextTriggerTime: null, // Will be calculated below
               intervalUsed: null,
             };
+            // Save migrated format immediately so old keys are removed
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
           }
         } catch (error) {
           console.warn('[Featured Shows] Invalid localStorage data, resetting:', error);
@@ -228,13 +230,23 @@ export function useFeaturedShowOverlay(pageType) {
         } else if (!storageData.nextTriggerTime) {
           // First visit (no trigger time set) → show immediately
           console.log('[Featured Shows] First visit, showing immediately');
+          // Set nextTriggerTime now so refreshing before dismiss doesn't re-show
+          const nextTrigger = now + intervalMs;
+          storageData.nextTriggerTime = nextTrigger;
+          storageData.intervalUsed = minutes;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
+          nextTriggerTimeRef.current = nextTrigger;
           showRandomShow();
-          // Don't set nextTriggerTime here - will be set when user dismisses
         } else if (storageData.nextTriggerTime <= now) {
           // Trigger time is in the past → show now
           console.log('[Featured Shows] Trigger time passed, showing immediately');
+          // Set nextTriggerTime now so refreshing before dismiss doesn't re-show
+          const nextTrigger = now + intervalMs;
+          storageData.nextTriggerTime = nextTrigger;
+          storageData.intervalUsed = minutes;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
+          nextTriggerTimeRef.current = nextTrigger;
           showRandomShow();
-          // Don't set nextTriggerTime here - will be set when user dismisses
         } else {
           // Use existing future trigger time (timer continues from where it left off)
           nextTriggerTimeRef.current = storageData.nextTriggerTime;
