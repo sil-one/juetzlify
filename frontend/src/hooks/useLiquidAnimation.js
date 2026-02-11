@@ -17,6 +17,43 @@ const WAVE_SETTLE = 0.02;         // waves done when amplitude factor < 2%
 // Number of points along the water surface polygon
 const SURFACE_POINTS = 20;
 
+// Maximum slope of water surface at full tilt (|gravityX| = 1).
+// Large enough that water fully pools on one side at most progress levels.
+const MAX_SLOPE = 600;
+
+/**
+ * Compute the y-offset for a clamped linear water surface that preserves area.
+ *
+ * The surface is: h(x) = offset + slope*(x - 0.5), clamped to [0, 100].
+ * We solve for offset such that the integral over x=[0,1] equals `level`.
+ *
+ * Three regimes depending on how steep the slope is:
+ *   1. No clamping:     slope is gentle, line stays within [0, 100]
+ *   2. Single clamping: line dips below 0 (or above 100) on one side
+ *   3. Both clamping:   line exceeds both bounds — water pools on one side
+ */
+function areaPreservingOffset(absSlope, level) {
+  if (absSlope < 0.01) return level;
+
+  const minSide = Math.min(level, 100 - level);
+
+  // Case 1: no clamping needed
+  if (absSlope <= 2 * minSide) return level;
+
+  // Case 3: both bounds exceeded — steep slope
+  if (absSlope * minSide >= 5000) {
+    return 50 + (level - 50) * absSlope / 100;
+  }
+
+  // Case 2: single-side clamping
+  if (level <= 50) {
+    // Bottom clamping (low fill, water piles on gravity side)
+    return -absSlope / 2 + Math.sqrt(2 * absSlope * level);
+  }
+  // Top clamping (high fill, empty pocket on anti-gravity side)
+  return 100 + absSlope / 2 - Math.sqrt(2 * absSlope * (100 - level));
+}
+
 /**
  * Build a CSS polygon clipPath for the water surface.
  *
@@ -26,16 +63,15 @@ const SURFACE_POINTS = 20;
  * @param {number} targetLevel - target water level (for wave amplitude scaling)
  */
 function buildClipPath(level, elapsed, gravityX, targetLevel) {
-  // Area-preserving linear slope: redistributes water under gravity.
-  // slope = 0 when flat, ±2*min(level, 100-level) at full tilt.
-  // The integral of (level + slope*(x-0.5)) over x=[0,1] always equals level.
-  const slope = gravityX * 2 * Math.min(level, 100 - level);
+  const absSlope = Math.abs(gravityX) * MAX_SLOPE;
+  const offset = areaPreservingOffset(absSlope, level);
+  const sign = Math.sign(gravityX) || 1;
 
   const points = [];
 
   for (let i = 0; i <= SURFACE_POINTS; i++) {
     const x = i / SURFACE_POINTS; // 0 = left edge, 1 = right edge
-    let surface = level + slope * (x - 0.5);
+    let surface = offset + sign * absSlope * (x - 0.5);
 
     // Overlay sloshing waves during activation animation
     if (elapsed != null && targetLevel > 0) {

@@ -47,6 +47,8 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
   const playRecordedRef = useRef(false);
   const playTimerRef = useRef(null);
   const shouldAutoPlayRef = useRef(true);
+  const lastTimeUpdateRef = useRef(0);
+  const lastPositionUpdateRef = useRef(0);
   const isOnline = useOnlineStatus();
 
   // Update audio element when track changes
@@ -141,6 +143,18 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
       syncOfflinePlays();
     }
   }, [isOnline, syncOfflinePlays]);
+
+  // Snap currentTime to real position when user returns to the app
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && audioRef.current) {
+        setCurrentTime(audioRef.current.currentTime);
+        updateMediaSessionPosition(audioRef.current);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   // Keyboard shortcut: spacebar to play/pause
   useEffect(() => {
@@ -250,25 +264,43 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
 
   const togglePlay = () => {
     if (!audioRef.current) return;
+    const audio = audioRef.current;
 
     if (isPlaying) {
-      audioRef.current.pause();
-      // Update Media Session to paused state
+      audio.pause();
+      setIsPlaying(false);
       if ('mediaSession' in navigator) {
         navigator.mediaSession.playbackState = 'paused';
       }
+      updateMediaSessionPosition(audio);
     } else {
-      audioRef.current.play().catch(error => {
-        console.error('Playback error:', error);
-      });
-      // Update Media Session to playing state
-      if ('mediaSession' in navigator) {
-        navigator.mediaSession.playbackState = 'playing';
-      }
+      audio.play()
+        .then(() => {
+          setIsPlaying(true);
+          if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'playing';
+          }
+          updateMediaSessionPosition(audio);
+        })
+        .catch(() => {
+          // iOS recovery: reload from current position and retry
+          const pos = audio.currentTime;
+          audio.load();
+          audio.currentTime = pos;
+          audio.play()
+            .then(() => {
+              setIsPlaying(true);
+              if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+              }
+              updateMediaSessionPosition(audio);
+            })
+            .catch(err => {
+              console.error('Playback failed after reload:', err);
+              setIsPlaying(false);
+            });
+        });
     }
-    setIsPlaying(!isPlaying);
-    // Update position state immediately when toggling playback
-    updateMediaSessionPosition(audioRef.current);
   };
 
   const seek = (time) => {
@@ -392,10 +424,31 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
     const actionHandlers = {
       play: () => {
         if (audioRef.current) {
-          audioRef.current.play();
-          setIsPlaying(true);
-          navigator.mediaSession.playbackState = 'playing';
-          updateMediaSessionPosition(audioRef.current);
+          const audio = audioRef.current;
+          audio.play()
+            .then(() => {
+              setIsPlaying(true);
+              navigator.mediaSession.playbackState = 'playing';
+              updateMediaSessionPosition(audio);
+            })
+            .catch(() => {
+              // iOS can suspend/unload the audio source when backgrounded.
+              // Reload from the current position and retry.
+              const pos = audio.currentTime;
+              audio.load();
+              audio.currentTime = pos;
+              audio.play()
+                .then(() => {
+                  setIsPlaying(true);
+                  navigator.mediaSession.playbackState = 'playing';
+                  updateMediaSessionPosition(audio);
+                })
+                .catch(err => {
+                  console.error('Media Session play failed after reload:', err);
+                  setIsPlaying(false);
+                  navigator.mediaSession.playbackState = 'paused';
+                });
+            });
         }
       },
       pause: () => {
@@ -457,9 +510,20 @@ export const useAudioPlayer = (tracks = [], syncOfflinePlays) => {
   };
 
   const handleTimeUpdate = (e) => {
-    setCurrentTime(e.target.currentTime);
-    // Update Media Session position state on every time update
-    updateMediaSessionPosition(e.target);
+    const now = Date.now();
+
+    // Skip UI state updates when page is hidden (screen off / app backgrounded)
+    // to avoid unnecessary React re-renders that drain battery.
+    if (!document.hidden && now - lastTimeUpdateRef.current >= 1000) {
+      setCurrentTime(e.target.currentTime);
+      lastTimeUpdateRef.current = now;
+    }
+
+    // Update lock screen position every ~5 seconds (still needed when backgrounded)
+    if (now - lastPositionUpdateRef.current >= 5000) {
+      updateMediaSessionPosition(e.target);
+      lastPositionUpdateRef.current = now;
+    }
   };
 
   const handleLoadedMetadata = (e) => {

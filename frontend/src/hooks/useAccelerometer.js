@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const STIFFNESS = 0.08;
-const DAMPING = 0.75;
+// Spring physics tuned for water-like inertia:
+// moderate stiffness for responsive tilt, high damping retention for sloshy overshoot
+const STIFFNESS = 0.06;
+const DAMPING = 0.94;
 
 export default function useAccelerometer(enabled) {
   const [gravityX, setGravityX] = useState(0);
@@ -10,16 +12,15 @@ export default function useAccelerometer(enabled) {
   const velocity = useRef(0);
   const rafId = useRef(null);
   const permissionGranted = useRef(false);
-  const hasMotion = useRef(false); // true once a real devicemotion event arrives
+  const hasOrientation = useRef(false);
 
   const requestPermission = useCallback(async () => {
-    // iOS 13+ requires explicit permission for both event types
     if (
-      typeof DeviceMotionEvent !== 'undefined' &&
-      typeof DeviceMotionEvent.requestPermission === 'function'
+      typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function'
     ) {
       try {
-        const result = await DeviceMotionEvent.requestPermission();
+        const result = await DeviceOrientationEvent.requestPermission();
         permissionGranted.current = result === 'granted';
         return permissionGranted.current;
       } catch {
@@ -27,11 +28,11 @@ export default function useAccelerometer(enabled) {
       }
     }
     if (
-      typeof DeviceOrientationEvent !== 'undefined' &&
-      typeof DeviceOrientationEvent.requestPermission === 'function'
+      typeof DeviceMotionEvent !== 'undefined' &&
+      typeof DeviceMotionEvent.requestPermission === 'function'
     ) {
       try {
-        const result = await DeviceOrientationEvent.requestPermission();
+        const result = await DeviceMotionEvent.requestPermission();
         permissionGranted.current = result === 'granted';
         return permissionGranted.current;
       } catch {
@@ -46,27 +47,24 @@ export default function useAccelerometer(enabled) {
   useEffect(() => {
     if (!enabled) return;
 
-    // Primary: devicemotion — real gravity vector, handles all orientations incl. upside-down
-    const handleMotion = (e) => {
-      const ag = e.accelerationIncludingGravity;
-      if (!ag || ag.x == null) return;
-      // Only trust devicemotion if we detect real gravity (~9.81 m/s²).
-      // Chrome DevTools fires devicemotion with zeros, which would block
-      // the deviceorientation fallback.
-      const mag = Math.sqrt(ag.x ** 2 + (ag.y ?? 0) ** 2 + (ag.z ?? 0) ** 2);
-      if (mag < 5) return;
-      hasMotion.current = true;
-      // ag.x > 0 when right side tilts down → water flows right
-      targetGravityX.current = Math.max(-1, Math.min(1, ag.x / 9.81));
-    };
-
-    // Fallback: deviceorientation — for Chrome DevTools sensor simulation
+    // Primary: deviceorientation — gamma is in device coords so it naturally
+    // handles all orientations including upside-down. Also works with
+    // Chrome DevTools sensor simulation.
     const handleOrientation = (e) => {
-      if (hasMotion.current) return; // prefer devicemotion when available
       if (e.gamma == null) return;
-      // sin(gamma) ≈ gravity fraction along X for typical phone orientations
+      hasOrientation.current = true;
       const gammaRad = (e.gamma * Math.PI) / 180;
       targetGravityX.current = Math.max(-1, Math.min(1, Math.sin(gammaRad)));
+    };
+
+    // Fallback: devicemotion — for devices that don't fire deviceorientation
+    const handleMotion = (e) => {
+      if (hasOrientation.current) return;
+      const ag = e.accelerationIncludingGravity;
+      if (!ag || ag.x == null) return;
+      const mag = Math.sqrt(ag.x ** 2 + (ag.y ?? 0) ** 2 + (ag.z ?? 0) ** 2);
+      if (mag < 5) return;
+      targetGravityX.current = Math.max(-1, Math.min(1, -ag.x / 9.81));
     };
 
     const animate = () => {
@@ -81,13 +79,13 @@ export default function useAccelerometer(enabled) {
       rafId.current = requestAnimationFrame(animate);
     };
 
-    window.addEventListener('devicemotion', handleMotion);
     window.addEventListener('deviceorientation', handleOrientation);
+    window.addEventListener('devicemotion', handleMotion);
     rafId.current = requestAnimationFrame(animate);
 
     return () => {
-      window.removeEventListener('devicemotion', handleMotion);
       window.removeEventListener('deviceorientation', handleOrientation);
+      window.removeEventListener('devicemotion', handleMotion);
       if (rafId.current) cancelAnimationFrame(rafId.current);
     };
   }, [enabled]);
