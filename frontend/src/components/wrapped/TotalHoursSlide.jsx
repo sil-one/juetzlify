@@ -14,6 +14,7 @@ const TotalHoursSlide = ({ totalPlays }) => {
       transition={{ duration: 0.5 }}
       className="slide-container"
     >
+      <div className="wrapped-label">Insgesamt</div>
       <CountUp
         end={hours}
         duration={2}

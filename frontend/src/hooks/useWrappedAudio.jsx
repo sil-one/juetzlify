@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../utils/constants';
 /**
  * Custom hook for wrapped background music with crossfading
  *
- * Plays intro music (El Gato Balearico) until TopTrackSlide,
+ * Plays intro music (La Musica Del Gatto) until TopTrackSlide,
  * then crossfades to user's #1 most-played track.
  *
  * @param {Object} options
@@ -93,30 +93,40 @@ export default function useWrappedAudio({
     }
   }, [introTrackId, topTrackId]);
 
-  // Resolve El Gato Balearico track ID from track list
+  // Resolve La Musica Del Gatto track ID - search both public and private tracks
   useEffect(() => {
     if (!enabled) return;
 
     async function resolveIntroTrack() {
       try {
-        const response = await fetch(`${API_BASE_URL}/tracks?type=${trackType}`);
-        if (!response.ok) throw new Error('Failed to fetch tracks');
+        // Fetch both public and private tracks to find intro regardless of visibility
+        const [publicRes, privateRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/tracks?type=public`),
+          fetch(`${API_BASE_URL}/tracks?type=private`),
+        ]);
 
-        const data = await response.json();
-        const tracks = data.tracks || [];
+        const allTracks = [];
+        if (publicRes.ok) {
+          const data = await publicRes.json();
+          allTracks.push(...(data.tracks || []));
+        }
+        if (privateRes.ok) {
+          const data = await privateRes.json();
+          allTracks.push(...(data.tracks || []));
+        }
 
-        // Search flexibly for El Gato Balearico (case-insensitive, handles spaces/underscores)
-        const elGato = tracks.find(t => {
+        // Search flexibly for La Musica del Gatto (case-insensitive, handles spaces/underscores)
+        const introTrack = allTracks.find(t => {
           const filename = t.filename.toLowerCase();
-          return filename.includes('gato') && filename.includes('balearico');
+          return filename.includes('musica') && filename.includes('gatto');
         });
 
-        if (elGato) {
-          console.log('[Wrapped Audio] Found intro track:', elGato.filename);
-          setIntroTrackId(elGato.id);
+        if (introTrack) {
+          console.log('[Wrapped Audio] Found intro track:', introTrack.filename);
+          setIntroTrackId(introTrack.id);
         } else {
-          console.error('El Gato Balearico not found in track list. Available tracks:',
-            tracks.map(t => t.filename).join(', '));
+          console.error('La Musica del Gatto not found in track list. Available tracks:',
+            allTracks.map(t => t.filename).join(', '));
         }
       } catch (error) {
         console.error('Failed to resolve intro track:', error);
@@ -124,7 +134,7 @@ export default function useWrappedAudio({
     }
 
     resolveIntroTrack();
-  }, [enabled, trackType]);
+  }, [enabled]);
 
   // Extract top track ID from statistics
   useEffect(() => {

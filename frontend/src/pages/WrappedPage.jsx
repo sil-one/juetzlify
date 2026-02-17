@@ -120,7 +120,7 @@ const WrappedPage = () => {
           />
         );
       case 2:
-        return <TotalHoursSlide totalPlays={statistics.totalPlays} />;
+        return <TotalHoursSlide totalPlays={statistics.allTimeTotalPlays} />;
       case 3:
         return <FakeBiarSlide />;
       case 4:

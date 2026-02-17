@@ -23,7 +23,7 @@ const CARNIVAL_2026 = {
     '2026-02-14': 'Samschtig',
     '2026-02-15': 'Sunntig',
     '2026-02-16': 'Gidelmäntig',
-    '2026-02-17': 'Üstrummlä-Zischtig',
+    '2026-02-17': 'Gidelziischtig',
   },
 };
 
@@ -279,6 +279,9 @@ export async function getCarnivalStatistics(includePrivate = false) {
   const statistics = await flushAndGetStatistics();
   const { startDate, endDate, dayNames } = statistics.carnival2026;
 
+  // All-time total plays (all tracks, regardless of visibility)
+  const allTimeTotalPlays = statistics.plays.length;
+
   // Filter by carnival dates and visibility
   const carnivalPlays = statistics.plays.filter((play) => {
     const inCarnival = play.date >= startDate && play.date <= endDate;
@@ -388,6 +391,7 @@ export async function getCarnivalStatistics(includePrivate = false) {
 
   return {
     totalPlays,
+    allTimeTotalPlays,
     uniqueTracks,
     topTracks,
     playsByDay: playsByDayWithNames,
