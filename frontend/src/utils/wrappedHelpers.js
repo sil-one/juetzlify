@@ -14,11 +14,11 @@ export function formatDuration(seconds) {
   const parts = [];
 
   if (hours > 0) {
-    parts.push(`${hours} ${hours === 1 ? 'Stund' : 'Stunde'}`);
+    parts.push(`${hours} ${hours === 1 ? 'Stund' : 'Stund'}`);
   }
 
   if (minutes > 0) {
-    parts.push(`${minutes} ${minutes === 1 ? 'Minut' : 'Minute'}`);
+    parts.push(`${minutes} ${minutes === 1 ? 'Minütä' : 'Minütä'}`);
   }
 
   return parts.join(' ');

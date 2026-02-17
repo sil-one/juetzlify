@@ -20,7 +20,7 @@ const FakeBiarSlide = () => {
       <div className="wrapped-label">Biär trunkä</div>
       <div className="wrapped-divider" />
       <p className="wrapped-text">
-        Da gaht nu eppis! Hoffentli sind alli wieder guät hei cho.
+        Da gaht nu eppis! Hoffentli hend all z Eigä nu gfundä.
       </p>
     </motion.div>
   );
