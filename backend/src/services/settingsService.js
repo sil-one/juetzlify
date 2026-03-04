@@ -86,6 +86,10 @@ function getDefaultSettings() {
       private: true,
     },
     featuredShowIntervalMinutes: 60, // Default: 1 hour (0 = every reload)
+    sunsetMode: {
+      enabled: true,
+      applied: false,
+    },
   };
 }
 
@@ -403,6 +407,103 @@ export function clearSettingsCache() {
 export async function getFeaturedShowInterval() {
   const settings = await getSettings();
   return settings.featuredShowIntervalMinutes ?? 60;
+}
+
+/**
+ * Get sunset mode status
+ */
+export async function getSunsetMode() {
+  const settings = await getSettings();
+  return settings.sunsetMode || { enabled: true, applied: false };
+}
+
+/**
+ * Set sunset mode enabled/disabled with atomic read-modify-write
+ */
+export async function setSunsetModeEnabled(enabled) {
+  let release = null;
+
+  try {
+    await ensureDataDir();
+
+    try {
+      await fs.access(SETTINGS_FILE);
+    } catch {
+      await fs.writeFile(SETTINGS_FILE, JSON.stringify(getDefaultSettings(), null, 2), 'utf-8');
+    }
+
+    release = await lockfile.lock(SETTINGS_FILE, {
+      retries: { retries: 100, minTimeout: 100, maxTimeout: 500 },
+      stale: 10000,
+    });
+
+    const data = await fs.readFile(SETTINGS_FILE, 'utf-8');
+    const settings = JSON.parse(data);
+
+    if (!settings.sunsetMode) settings.sunsetMode = { enabled: true, applied: false };
+    settings.sunsetMode.enabled = enabled;
+
+    await fs.writeFile(SETTINGS_TMP, JSON.stringify(settings, null, 2), 'utf-8');
+    await fs.rename(SETTINGS_TMP, SETTINGS_FILE);
+    settingsCache = null;
+
+    console.log(`[Settings] Sunset mode enabled set to ${enabled}`);
+    return { success: true, enabled };
+  } catch (error) {
+    console.error('Error setting sunset mode enabled:', error.message);
+    try { await fs.unlink(SETTINGS_TMP); } catch { }
+    throw error;
+  } finally {
+    if (release) {
+      try { await release(); } catch (error) { console.error('[Settings] Error releasing lock:', error.message); }
+    }
+  }
+}
+
+/**
+ * Mark sunset as applied with atomic read-modify-write
+ */
+export async function markSunsetApplied() {
+  let release = null;
+
+  try {
+    await ensureDataDir();
+
+    try {
+      await fs.access(SETTINGS_FILE);
+    } catch {
+      await fs.writeFile(SETTINGS_FILE, JSON.stringify(getDefaultSettings(), null, 2), 'utf-8');
+    }
+
+    release = await lockfile.lock(SETTINGS_FILE, {
+      retries: { retries: 100, minTimeout: 100, maxTimeout: 500 },
+      stale: 10000,
+    });
+
+    const data = await fs.readFile(SETTINGS_FILE, 'utf-8');
+    const settings = JSON.parse(data);
+
+    if (!settings.sunsetMode) settings.sunsetMode = { enabled: true, applied: false };
+    settings.sunsetMode.applied = true;
+    // Also disable wrapped and ads as part of sunset
+    settings.wrappedEnabled = { public: false, private: false };
+    settings.podcastAdsEnabled = { public: false, private: false };
+
+    await fs.writeFile(SETTINGS_TMP, JSON.stringify(settings, null, 2), 'utf-8');
+    await fs.rename(SETTINGS_TMP, SETTINGS_FILE);
+    settingsCache = null;
+
+    console.log('[Settings] Sunset marked as applied, wrapped and ads disabled');
+    return { success: true };
+  } catch (error) {
+    console.error('Error marking sunset applied:', error.message);
+    try { await fs.unlink(SETTINGS_TMP); } catch { }
+    throw error;
+  } finally {
+    if (release) {
+      try { await release(); } catch (error) { console.error('[Settings] Error releasing lock:', error.message); }
+    }
+  }
 }
 
 /**

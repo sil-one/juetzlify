@@ -13,6 +13,26 @@ import settingsRouter from './routes/settings.js';
 import { getAllTracks } from './services/trackService.js';
 import { initializeBatchWriter } from './services/playStatisticsService.js';
 import { initializeCacheInvalidation } from './services/cacheInvalidationService.js';
+import { getSunsetMode, markSunsetApplied } from './services/settingsService.js';
+import { setAllPublicTracksToPrivate } from './services/visibilityService.js';
+
+const SUNSET_TIMESTAMP = new Date('2026-03-14T00:00:00+01:00').getTime();
+
+async function checkAndApplySunset() {
+  if (Date.now() < SUNSET_TIMESTAMP) return;
+
+  try {
+    const sunsetMode = await getSunsetMode();
+    if (!sunsetMode.enabled || sunsetMode.applied) return;
+
+    console.log('[Sunset] 🌅 Sunset time reached, applying sunset...');
+    await setAllPublicTracksToPrivate();
+    await markSunsetApplied(); // also disables wrapped and ads
+    console.log('[Sunset] ✓ Sunset applied successfully');
+  } catch (error) {
+    console.error('[Sunset] Error applying sunset:', error.message);
+  }
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -73,6 +93,10 @@ app.listen(PORT, '0.0.0.0', async () => {
 
   // Initialize batch writer for statistics (1s interval for PM2 cluster sync)
   initializeBatchWriter(1000);
+
+  // Check and apply sunset mode on startup, then every minute
+  await checkAndApplySunset();
+  setInterval(checkAndApplySunset, 60 * 1000);
 
   // Preload tracks on startup
   console.log('Loading tracks...');

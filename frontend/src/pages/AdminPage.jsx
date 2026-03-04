@@ -27,6 +27,9 @@ const AdminPage = () => {
   const [intervalInputValue, setIntervalInputValue] = useState('60');
   const [isUpdatingInterval, setIsUpdatingInterval] = useState(false);
   const [lyricsTrack, setLyricsTrack] = useState(null);
+  const [sunsetMode, setSunsetMode] = useState({ enabled: true, applied: false });
+  const [isTogglingSunset, setIsTogglingSunset] = useState(false);
+  const [isTriggeringSunset, setIsTriggeringSunset] = useState(false);
 
   // Get auth headers for API requests
   const getAuthHeaders = () => {
@@ -44,6 +47,7 @@ const AdminPage = () => {
       fetchPodcastAdsStatus();
       fetchBannerVersion();
       fetchFeaturedShowInterval();
+      fetchSunsetMode();
     }
   }, [isAuthenticated]);
 
@@ -286,6 +290,65 @@ const AdminPage = () => {
       alert('Failed to update featured show interval');
     } finally {
       setIsUpdatingInterval(false);
+    }
+  };
+
+  const fetchSunsetMode = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/sunset/status`, { headers: getAuthHeaders() });
+      const data = await response.json();
+      if (data.success) {
+        setSunsetMode(data.sunsetMode);
+      }
+    } catch (err) {
+      console.error('Error fetching sunset mode:', err);
+    }
+  };
+
+  const toggleSunsetMode = async () => {
+    try {
+      setIsTogglingSunset(true);
+      const newEnabled = !sunsetMode.enabled;
+      const response = await fetch(`${API_BASE_URL}/admin/sunset/enabled`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ enabled: newEnabled }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSunsetMode({ ...sunsetMode, enabled: newEnabled });
+      } else {
+        alert(`Failed to toggle sunset mode: ${data.error}`);
+      }
+    } catch (err) {
+      console.error('Error toggling sunset mode:', err);
+      alert('Failed to toggle sunset mode');
+    } finally {
+      setIsTogglingSunset(false);
+    }
+  };
+
+  const triggerSunsetNow = async () => {
+    if (!window.confirm('Sunset jetzt auslösen? Alle öffentlichen Songs werden privat gestellt, Wrapped und Ads deaktiviert.')) return;
+    try {
+      setIsTriggeringSunset(true);
+      const response = await fetch(`${API_BASE_URL}/admin/sunset/trigger`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSunsetMode({ ...sunsetMode, applied: true });
+        alert(`Sunset ausgelöst! ${data.tracksChanged} Song(s) auf privat gestellt.`);
+        await fetchTracks();
+      } else {
+        alert(`Failed: ${data.error}`);
+      }
+    } catch (err) {
+      console.error('Error triggering sunset:', err);
+      alert('Failed to trigger sunset');
+    } finally {
+      setIsTriggeringSunset(false);
     }
   };
 
@@ -757,6 +820,53 @@ const AdminPage = () => {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Sunset Mode */}
+        <div className="bg-sp-dark rounded-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold mb-4">⚰️ Sunset Mode</h2>
+          <p className="text-sp-text-secondary text-sm mb-6">
+            Wenn aktiviert, zählt der Header bis Samstag, 14. März 2026 runter. Um Mitternacht werden automatisch alle öffentlichen Songs privat gestellt, Wrapped und Ads deaktiviert.
+          </p>
+          <div className="bg-sp-gray p-4 rounded-lg mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <h3 className="text-lg font-semibold">Sunset aktiviert</h3>
+                  {sunsetMode.applied && (
+                    <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded-full font-medium">
+                      Ausgelöst
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-sp-text-secondary">
+                  {sunsetMode.applied
+                    ? 'Sunset wurde bereits ausgelöst. Songs sind privat, Wrapped und Ads deaktiviert.'
+                    : 'Countdown und automatisches Sunset-Auslösen am 14. März.'}
+                </p>
+              </div>
+              <button
+                onClick={toggleSunsetMode}
+                disabled={isTogglingSunset}
+                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors flex-shrink-0 ${
+                  sunsetMode.enabled ? 'bg-red-500' : 'bg-sp-light-gray'
+                } disabled:opacity-50`}
+              >
+                <span
+                  className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                    sunsetMode.enabled ? 'translate-x-7' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+          <button
+            onClick={triggerSunsetNow}
+            disabled={isTriggeringSunset || sunsetMode.applied}
+            className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          >
+            {isTriggeringSunset ? 'Wird ausgelöst...' : sunsetMode.applied ? 'Bereits ausgelöst' : 'Jetzt auslösen'}
+          </button>
         </div>
 
         {/* Upload Section */}

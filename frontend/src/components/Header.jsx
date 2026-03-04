@@ -11,6 +11,7 @@ const Header = ({ isAuthenticated, onLogout }) => {
   const [clickCount, setClickCount] = useState(0);
   const timeoutRef = useRef(null);
   const [wrappedStatus, setWrappedStatus] = useState({ public: false, private: false });
+  const [sunsetModeEnabled, setSunsetModeEnabled] = useState(true);
 
   // Fetch wrapped status
   useEffect(() => {
@@ -26,6 +27,22 @@ const Header = ({ isAuthenticated, onLogout }) => {
       }
     };
     checkWrappedStatus();
+  }, []);
+
+  // Fetch sunset mode
+  useEffect(() => {
+    const checkSunsetMode = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/settings/sunset-mode`);
+        const data = await response.json();
+        if (data.success) {
+          setSunsetModeEnabled(data.enabled);
+        }
+      } catch (err) {
+        console.error('Error checking sunset mode:', err);
+      }
+    };
+    checkSunsetMode();
   }, []);
 
   // Determine if wrapped should show and which link to use
@@ -100,7 +117,7 @@ const Header = ({ isAuthenticated, onLogout }) => {
                 )}
               </span>
             </Link>
-            <CountdownTimer />
+            {sunsetModeEnabled && <CountdownTimer />}
           </div>
 
           {/* Right content - Wrapped button */}

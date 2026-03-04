@@ -392,6 +392,56 @@ export function clearVisibilityCache() {
 }
 
 /**
+ * Set all public tracks to private (used for sunset)
+ */
+export async function setAllPublicTracksToPrivate() {
+  let release = null;
+
+  try {
+    await ensureDataDir();
+
+    try {
+      await fs.access(METADATA_FILE);
+    } catch {
+      await fs.writeFile(METADATA_FILE, JSON.stringify({ tracks: {} }, null, 2), 'utf-8');
+    }
+
+    release = await lockfile.lock(METADATA_FILE, {
+      retries: { retries: 100, minTimeout: 100, maxTimeout: 500 },
+      stale: 10000,
+    });
+
+    console.log('[Visibility] Lock acquired for sunset: setting all public tracks to private...');
+
+    const data = await fs.readFile(METADATA_FILE, 'utf-8');
+    const metadata = JSON.parse(data);
+
+    let changed = 0;
+    for (const filename of Object.keys(metadata.tracks)) {
+      if (metadata.tracks[filename] === Visibility.PUBLIC) {
+        metadata.tracks[filename] = Visibility.PRIVATE;
+        changed++;
+      }
+    }
+
+    await fs.writeFile(METADATA_TMP, JSON.stringify(metadata, null, 2), 'utf-8');
+    await fs.rename(METADATA_TMP, METADATA_FILE);
+    visibilityCache = null;
+
+    console.log(`[Visibility] Sunset: set ${changed} public tracks to private`);
+    return { success: true, changed };
+  } catch (error) {
+    console.error('Error setting all public tracks to private:', error.message);
+    try { await fs.unlink(METADATA_TMP); } catch { }
+    throw error;
+  } finally {
+    if (release) {
+      try { await release(); } catch (error) { console.error('[Visibility] Error releasing lock:', error.message); }
+    }
+  }
+}
+
+/**
  * Remove visibility entry for a deleted track
  */
 export async function removeTrackVisibility(filename) {

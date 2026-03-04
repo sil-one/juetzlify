@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 
-const CountdownTimer = () => {
+const CountdownTimer = ({ onExpired }) => {
   const [timeLeft, setTimeLeft] = useState(null);
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const targetDate = new Date('2026-02-11T19:45:00+01:00');
+      const targetDate = new Date('2026-03-14T00:00:00+01:00');
       const now = new Date();
       const difference = targetDate - now;
 
@@ -34,13 +34,19 @@ const CountdownTimer = () => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (isExpired && onExpired) {
+      onExpired();
+    }
+  }, [isExpired, onExpired]);
+
   if (isExpired || !timeLeft) {
     return null;
   }
 
   return (
     <div className="flex items-center gap-1.5 text-xs text-sp-text-secondary">
-      <span className="text-sp-green text-sm">🎺🥁</span>
+      <span className="text-sp-green text-sm">⚰️</span>
       <div className="flex items-center gap-0.5">
         <span className="text-sp-green font-semibold">{timeLeft.days}</span>
         <span className="text-[10px] sm:text-xs">Täg</span>

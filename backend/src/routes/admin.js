@@ -26,7 +26,11 @@ import {
   setPodcastAdsEnabled,
   getFeaturedShowInterval,
   setFeaturedShowInterval,
+  getSunsetMode,
+  setSunsetModeEnabled,
+  markSunsetApplied,
 } from '../services/settingsService.js';
+import { setAllPublicTracksToPrivate } from '../services/visibilityService.js';
 import { getLyrics, setLyrics, getAllLyricsMetadata } from '../services/lyricsService.js';
 import { config } from '../config/config.js';
 import { requireAdmin } from '../middleware/authMiddleware.js';
@@ -648,6 +652,53 @@ router.put('/tracks/:filename/lyrics', async (req, res) => {
       error: 'Failed to update lyrics',
       message: error.message,
     });
+  }
+});
+
+/**
+ * GET /api/admin/sunset/status
+ * Get sunset mode status
+ */
+router.get('/sunset/status', async (req, res) => {
+  try {
+    const sunsetMode = await getSunsetMode();
+    res.json({ success: true, sunsetMode });
+  } catch (error) {
+    console.error('Error fetching sunset mode:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch sunset mode' });
+  }
+});
+
+/**
+ * POST /api/admin/sunset/enabled
+ * Enable or disable sunset mode
+ */
+router.post('/sunset/enabled', async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({ success: false, error: 'enabled must be a boolean' });
+    }
+    await setSunsetModeEnabled(enabled);
+    res.json({ success: true, enabled });
+  } catch (error) {
+    console.error('Error setting sunset mode:', error);
+    res.status(500).json({ success: false, error: 'Failed to set sunset mode' });
+  }
+});
+
+/**
+ * POST /api/admin/sunset/trigger
+ * Manually trigger the sunset (set all public tracks to private, disable wrapped/ads)
+ */
+router.post('/sunset/trigger', async (req, res) => {
+  try {
+    const result = await setAllPublicTracksToPrivate();
+    await markSunsetApplied();
+    res.json({ success: true, tracksChanged: result.changed });
+  } catch (error) {
+    console.error('Error triggering sunset:', error);
+    res.status(500).json({ success: false, error: 'Failed to trigger sunset' });
   }
 });
 
