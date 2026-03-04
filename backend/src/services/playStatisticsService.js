@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import lockfile from 'proper-lockfile';
 import { config } from '../config/config.js';
+import { getAllTracks } from './trackService.js';
 
 const STATISTICS_FILE = path.join(config.dataPath, 'play-statistics.json');
 const STATISTICS_TMP = STATISTICS_FILE + '.tmp';
@@ -282,12 +283,19 @@ export async function getCarnivalStatistics(includePrivate = false) {
   // All-time total plays (all tracks, regardless of visibility)
   const allTimeTotalPlays = statistics.plays.length;
 
-  // Filter by carnival dates and visibility
+  // Build filename→currentTrackId and filename→visibility lookups
+  const currentTracks = await getAllTracks('admin');
+  const filenameToTrackId = {};
+  const filenameToVisibility = {};
+  currentTracks.forEach((t) => {
+    filenameToTrackId[t.filename] = t.id;
+    filenameToVisibility[t.filename] = t.visibility;
+  });
+
+  // Filter by carnival dates only — same pool for both public and private views
+  // (private tracks are filtered from topTracks below, not from aggregate stats)
   const carnivalPlays = statistics.plays.filter((play) => {
-    const inCarnival = play.date >= startDate && play.date <= endDate;
-    const visibilityMatch =
-      includePrivate || play.visibility === 'public';
-    return inCarnival && visibilityMatch;
+    return play.date >= startDate && play.date <= endDate;
   });
 
   // Calculate totals
@@ -302,7 +310,7 @@ export async function getCarnivalStatistics(includePrivate = false) {
     // Store metadata from first occurrence
     if (!trackMetadata[play.filename]) {
       trackMetadata[play.filename] = {
-        trackId: play.trackId,
+        trackId: filenameToTrackId[play.filename] || play.trackId,
         title: play.title,
         artist: play.artist,
         album: play.album,
@@ -310,7 +318,7 @@ export async function getCarnivalStatistics(includePrivate = false) {
     }
   });
 
-  const topTracks = Object.entries(trackCounts)
+  const allTopTracks = Object.entries(trackCounts)
     .map(([filename, count]) => ({
       trackId: trackMetadata[filename].trackId,
       filename,
@@ -320,6 +328,11 @@ export async function getCarnivalStatistics(includePrivate = false) {
       count,
     }))
     .sort((a, b) => b.count - a.count);
+
+  // Public view hides private tracks from the top list; private view shows all
+  const topTracks = includePrivate
+    ? allTopTracks
+    : allTopTracks.filter((track) => filenameToVisibility[track.filename] !== 'private');
 
   // Plays by day
   const playsByDay = {};
@@ -344,7 +357,7 @@ export async function getCarnivalStatistics(includePrivate = false) {
   const lastPlay = carnivalPlays[carnivalPlays.length - 1];
 
   const firstTrack = firstPlay ? {
-    trackId: firstPlay.trackId,
+    trackId: filenameToTrackId[firstPlay.filename] || firstPlay.trackId,
     filename: firstPlay.filename,
     title: firstPlay.title,
     artist: firstPlay.artist,
@@ -352,7 +365,7 @@ export async function getCarnivalStatistics(includePrivate = false) {
   } : null;
 
   const lastTrack = lastPlay ? {
-    trackId: lastPlay.trackId,
+    trackId: filenameToTrackId[lastPlay.filename] || lastPlay.trackId,
     filename: lastPlay.filename,
     title: lastPlay.title,
     artist: lastPlay.artist,

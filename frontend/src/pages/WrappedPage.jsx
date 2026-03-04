@@ -116,7 +116,7 @@ const WrappedPage = () => {
         return (
           <TotalPlaysSlide
             uniqueTracks={statistics.uniqueTracks}
-            totalPlays={statistics.totalPlays}
+            totalPlays={statistics.allTimeTotalPlays}
           />
         );
       case 2:

@@ -26,9 +26,15 @@ function initializeSettingsWatcher() {
     }
 
     settingsWatcher = fsSync.watch(SETTINGS_FILE, (eventType) => {
-      if (eventType === 'change') {
-        settingsCache = null;
-        console.log('Settings file changed (wrapped/ads), cache cleared across worker');
+      settingsCache = null;
+      console.log(`Settings file ${eventType} detected, cache cleared across worker`);
+
+      // Atomic writes trigger 'rename' (inode replaced), not 'change'.
+      // After a rename the old watcher stops firing — re-establish it.
+      if (eventType === 'rename') {
+        try { settingsWatcher.close(); } catch { /* ignore */ }
+        settingsWatcher = null;
+        setTimeout(initializeSettingsWatcher, 100);
       }
     });
 
