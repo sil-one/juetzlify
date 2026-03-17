@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import PublicPage from './pages/PublicPage';
 import PrivatePage from './pages/PrivatePage';
@@ -14,6 +14,7 @@ const SUNSET_TIMESTAMP = new Date('2026-03-14T00:00:00+01:00').getTime();
 
 function MainLayout() {
   const [showSunsetOverlay, setShowSunsetOverlay] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const checkSunset = async () => {
@@ -38,7 +39,7 @@ function MainLayout() {
         <Route path="/" element={<PublicPage />} />
         <Route path="/private" element={<PrivatePage />} />
       </Routes>
-      {showSunsetOverlay && (
+      {showSunsetOverlay && location.pathname !== '/private' && (
         <SunsetOverlay onDismiss={() => setShowSunsetOverlay(false)} />
       )}
     </div>

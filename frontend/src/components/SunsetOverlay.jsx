@@ -21,7 +21,7 @@ const SunsetOverlay = ({ onDismiss }) => {
       <img
         src="/juetzlify_sunset.jpg"
         alt=""
-        className="w-full h-full object-cover"
+        className="w-full h-full object-contain bg-black"
         draggable={false}
       />
     </div>
